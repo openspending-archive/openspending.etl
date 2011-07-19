@@ -1,0 +1,3 @@
+recursive-include src/public *
+recursive-include src/serverside_js *
+recursive-include src/templates *
