@@ -24,7 +24,8 @@ setup(
         "ckanclient==0.7",
         "colander==0.9.3",
         "distribute==0.6.19",
-        "mock==0.7.2"
+        "mock==0.7.2",
+        "openspending"
     ],
 
     packages=find_packages('.packageroot'),
