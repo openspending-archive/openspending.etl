@@ -1,13 +1,13 @@
 from setuptools import setup, find_packages
-from src import __version__
+from etl import __version__
 
 setup(
-    name='openspending.etl.ui',
-    version='0.0.1',
-    description='OpenSpending Extract/Transform/Load tools and frontend',
+    name='openspending.etl',
+    version=__version__,
+    description='OpenSpending Extract/Transform/Load tools',
     author='Open Knowledge Foundation',
     author_email='okfn-help@ lists okfn org',
-    url='http://github.com/okfn/openspending.etl.ui',
+    url='http://github.com/okfn/openspending.etl',
 
     install_requires=[
         "Pylons==1.0",
@@ -22,12 +22,13 @@ setup(
         "celery-pylons==2.1.4dev",
         "Babel==0.9.6",
         "ckanclient==0.7",
-        "colander==0.9.3"
+        "colander==0.9.3",
+        "distribute==0.6.19"
     ],
 
     packages=find_packages('.packageroot'),
     package_dir={'': '.packageroot'},
-    namespace_packages = ['openspending', 'openspending.etl'],
+    namespace_packages = ['openspending'],
 
     test_suite='nose.collector',
 
