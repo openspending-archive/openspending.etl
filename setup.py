@@ -6,7 +6,7 @@ setup(
     version=__version__,
     description='OpenSpending Extract/Transform/Load tools',
     author='Open Knowledge Foundation',
-    author_email='okfn-help@ lists okfn org',
+    author_email='okfn-help at lists okfn org',
     url='http://github.com/okfn/openspending.etl',
 
     install_requires=[
@@ -23,7 +23,8 @@ setup(
         "Babel==0.9.6",
         "ckanclient==0.7",
         "colander==0.9.3",
-        "distribute==0.6.19"
+        "distribute==0.6.19",
+        "mock==0.7.2"
     ],
 
     packages=find_packages('.packageroot'),
