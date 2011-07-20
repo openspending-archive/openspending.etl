@@ -29,13 +29,9 @@
   <link rel="stylesheet" href="${h.static('css/blueprint/print.css')}" type="text/css" media="print" />
   <!--[if lt IE 8]><link rel="stylesheet" href="/css/blueprint/ie.css" type="text/css" media="screen, projection"><![endif]-->
   <link rel="stylesheet" href="${h.static('css/style.css')}" />
-  <script src="${h.static('js/libs/jquery-1.5.1.min.js')}"></script>
-  <script src="${h.static('js/libs/underscore-min.js')}"></script>
-  <script src="${h.static('js/libs/backbone-min.js')}"></script>
 
-  <script src="${h.static('js/utils.js')}"></script>
-  <script src="${h.static('js/script.js')}"></script>
   <script src="http://assets.okfn.org/banner/banner.js"></script>
+
   <py:if test="defined('optional_head')">
     ${optional_head()}
   </py:if>
@@ -52,9 +48,6 @@
     <div id="page" class="container">
 	    <header>
           <nav>
-            <a href="${g.blog_link}">Blog</a>
-            <a py:if="g.forum_link" href="${g.forum_link}">Forum</a>
-            <a href="${g.wiki_link}">About</a>
             <a py:if="c.account is None" href="/login">Login or register</a>
             <py:if test="c.account is not None">
               <a href="/settings">My Profile</a>
