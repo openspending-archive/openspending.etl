@@ -20,7 +20,8 @@ from paste.script.appinstall import SetupCommand
 from routes.util import URLGenerator
 from webtest import TestApp
 
-import helpers as h
+from openspending.test import helpers, TestCase, DatabaseTestCase
+from openspending.ui.test import ControllerTestCase
 
 from openspending.etl.ui.config.environment import load_environment
 
@@ -30,43 +31,14 @@ __all__ = [
 
 environ = {}
 
-here_dir = os.path.dirname(os.path.abspath(__file__))
+here_dir = os.path.dirname(os.path.realpath(os.path.abspath(__file__)))
 conf_dir = os.path.dirname(os.path.dirname(os.path.dirname(here_dir)))
 
 sys.path.insert(0, conf_dir)
 
 # Clear everything before any tests are run.
 def setup_module():
-    h.clean_all()
-
-class TestCase(object):
-    def setup(self):
-        pass
-
-    def teardown(self):
-        # Remove any mocked CkanClients
-        from openspending.etl.ui.lib import ckan
-        ckan._client = None
-
-class DatabaseTestCase(TestCase):
-    def teardown(self):
-        h.clean_all()
-        super(DatabaseTestCase, self).teardown()
-
-class ControllerTestCase(DatabaseTestCase):
-    def __init__(self, *args, **kwargs):
-        wsgiapp = loadapp('config:test.ini', relative_to=conf_dir)
-        config = wsgiapp.config
-        pylons.app_globals._push_object(config['pylons.app_globals'])
-        pylons.config._push_object(config)
-
-        # Initialize a translator for tests that utilize i18n
-        translator = _get_translator(pylons.config.get('lang'))
-        pylons.translator._push_object(translator)
-
-        url._push_object(URLGenerator(config['routes.map'], environ))
-        self.app = TestApp(wsgiapp)
-        super(ControllerTestCase, self).__init__(*args, **kwargs)
+    helpers.clean_all()
 
 class LoaderTestCase(DatabaseTestCase):
     '''

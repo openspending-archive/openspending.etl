@@ -22,10 +22,11 @@ from repoze.who.classifiers import default_request_classifier
 from repoze.who.classifiers import default_challenge_decider
 from repoze.who.plugins.friendlyform import FriendlyFormPlugin
 
+from openspending.ui.lib.authenticator import UsernamePasswordAuthenticator
+from openspending.ui.lib.authenticator import ApiKeyAuthenticator
+from openspending import model
+
 from openspending.etl.ui.config.environment import load_environment
-from openspending.etl.ui.lib.authenticator import UsernamePasswordAuthenticator,\
-    ApiKeyAuthenticator
-from openspending.etl.ui import model
 
 def make_app(global_conf, full_stack=True, static_files=True, **app_conf):
     """Create a Pylons WSGI application and return it

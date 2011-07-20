@@ -10,8 +10,8 @@ from pylons import tmpl_context as c, request, config, app_globals, session
 from pylons.controllers.util import abort
 from genshi.filters import HTMLFormFiller
 
-from openspending.etl.ui import model, i18n
-from openspending.etl.ui.plugins import PluginImplementations, IGenshiStreamFilter, IRequest
+from openspending import model
+from openspending.etl.ui import i18n
 
 import logging
 log = logging.getLogger(__name__)
@@ -36,9 +36,6 @@ def render(template_name, form_fill=None, form_errors={}, extra_vars=None,
             filler = HTMLFormFiller(data=form_fill)
             stream = stream | filler
 
-        for item in PluginImplementations(IGenshiStreamFilter):
-            stream = item.filter(stream)
-
         return literal(stream.render(method=method, encoding=None))
 
     return cached_template(template_name, render_template, cache_key=cache_key,
@@ -47,8 +44,6 @@ def render(template_name, form_fill=None, form_errors={}, extra_vars=None,
 
 
 class BaseController(WSGIController):
-
-    items = PluginImplementations(IRequest)
 
     def __call__(self, environ, start_response):
         """Invoke the Controller"""
@@ -82,12 +77,7 @@ class BaseController(WSGIController):
         c.dataset = None
         self._detect_dataset_subdomain()
 
-        for item in self.items:
-            item.before(request, c)
-
     def __after__(self):
-        for item in self.items:
-            item.after(request, c)
         if session.get('state', {}) != c.state:
             session['state'] = c.state
             session.save()

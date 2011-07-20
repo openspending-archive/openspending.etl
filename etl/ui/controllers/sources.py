@@ -7,16 +7,17 @@ from pylons.controllers.util import abort, redirect
 from pylons.i18n import _
 from routes import url_for
 
-from openspending.etl.ui.lib import ckan
-from openspending.etl.ui.lib import json, jsonp
-from openspending.etl.ui.lib import helpers as h
-from openspending.etl.ui.lib.authz import requires
+from openspending.lib import ckan
+from openspending.lib import json
+from openspending.logic.model import save_model, available_models
+from openspending.model import Dataset, Model
+from openspending.ui.lib import jsonp
+from openspending.ui.lib import helpers as h
+from openspending.ui.lib.authz import requires
 from openspending.etl.ui.lib.base import BaseController, render
 from openspending.etl.ui.lib.csvimport import DatasetImporter
 from openspending.etl.ui.lib.resourceimport import package_and_resource, load_from_ckan
 from openspending.etl.ui.lib.csvimport import validate_model, resource_lines, load_dataset
-from openspending.etl.ui.logic.model import save_model, available_models
-from openspending.etl.ui.model import Dataset, Model
 
 import logging
 log = logging.getLogger(__name__)

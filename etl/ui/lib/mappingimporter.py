@@ -3,7 +3,7 @@ import urllib
 import urlparse
 
 from openspending.etl.ui.forms.sources import DATATYPE_NAMES, DIMENSION_TYPES
-from openspending.etl.ui.lib.unicode_dict_reader import UnicodeDictReader
+from openspending.lib.unicode_dict_reader import UnicodeDictReader
 
 COMPLEX_TYPES = ['classifier', 'entity']
 

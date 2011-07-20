@@ -1,3 +1,2 @@
 recursive-include etl/ui/public *
-recursive-include etl/ui/serverside_js *
 recursive-include etl/ui/templates *

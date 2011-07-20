@@ -4,16 +4,15 @@ import time
 from bson import DBRef
 from pymongo import ASCENDING
 
-from openspending.etl.ui.lib.aggregator import update_distincts
-from openspending.etl.ui.lib.cubes import Cube
-from openspending.etl.ui.lib.util import check_rest_suffix, deep_get
-from openspending.etl.ui.lib.views import View
-from openspending.etl.ui.logic.classifier import create_classifier, get_classifier
-from openspending.etl.ui.logic.entry import classify_entry, entitify_entry
-from openspending.etl.ui.logic.dimension import create_dimension
-from openspending.etl.ui.model import Changeset, ChangeObject, Classifier
-from openspending.etl.ui.model import Dataset, Dimension, Entry, Entity
-
+from openspending.lib.aggregator import update_distincts
+from openspending.lib.cubes import Cube
+from openspending.lib.util import check_rest_suffix, deep_get
+from openspending.logic.classifier import create_classifier, get_classifier
+from openspending.logic.entry import classify_entry, entitify_entry
+from openspending.logic.dimension import create_dimension
+from openspending.model import Changeset, ChangeObject, Classifier
+from openspending.model import Dataset, Dimension, Entry, Entity
+from openspending.ui.lib.views import View
 
 log = logging.getLogger(__name__)
 

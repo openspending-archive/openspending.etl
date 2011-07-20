@@ -1,5 +1,6 @@
-from openspending.etl.ui.lib import ckan, csvimport
-from openspending.etl.ui.model import Dataset
+from openspending.lib import ckan
+from openspending.model import Dataset
+from openspending.etl.ui.lib import csvimport
 
 class ResourceImportError(StandardError):
     pass
