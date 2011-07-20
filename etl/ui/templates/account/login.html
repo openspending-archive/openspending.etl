@@ -5,9 +5,9 @@
   <py:def function="nav_class">nav-account</py:def>
 
   <py:def function="page_title">Login</py:def>
-  
-  <div py:def="content">
-    <div class="span-12">
+
+  <div py:def="content" py:strip="">
+    <div class="span-11 prepend-1">
       <h2>Log in</h2>
       <form class="basic login" id="login" action="/perform_login" method="POST">
         <label for="login">Login</label>
@@ -19,7 +19,7 @@
         <input value="Login" type="submit" />
       </form>
     </div>
-    <div class="span-12 last">
+    <div class="span-11 append-1 last">
       <h2>Create an account</h2>
       <form class="basic register" id="register" action="/register" method="POST">
         <label for="name">Login</label>

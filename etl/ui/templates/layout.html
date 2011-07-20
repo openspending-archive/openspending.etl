@@ -23,13 +23,14 @@
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="${h.static('css/reset.css')}" />
-  <script src="${h.static('js/libs/modernizr-1.6.min.js')}"></script>
 
   <link rel="stylesheet" href="${h.static('css/blueprint/screen.css')}" type="text/css" media="screen, projection" />
   <link rel="stylesheet" href="${h.static('css/blueprint/print.css')}" type="text/css" media="print" />
   <!--[if lt IE 8]><link rel="stylesheet" href="/css/blueprint/ie.css" type="text/css" media="screen, projection"><![endif]-->
   <link rel="stylesheet" href="${h.static('css/style.css')}" />
 
+  <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.6/jquery.min.js"></script>
+  <script src="${h.static('js/modernizr.js')}"></script>
   <script src="http://assets.okfn.org/banner/banner.js"></script>
 
   <py:if test="defined('optional_head')">
@@ -37,40 +38,32 @@
   </py:if>
 </head>
 <body class="${nav_class()}">
-  <div id="wrap">
-    <py:with vars="messages = list(h._flash.pop_messages())">
-      <div class="flash-banner-box" py:if="len(messages)">
-        <div class="flash-banner ${m.category}" py:for="m in messages">
-          ${m.message}
-        </div>
-      </div>
-    </py:with>
-    <div id="page" class="container">
-	    <header>
-          <nav>
-            <a py:if="c.account is None" href="/login">Login or register</a>
-            <py:if test="c.account is not None">
-              <a href="/settings">My Profile</a>
-              <a href="/logout">Logout</a>
-            </py:if>
-          </nav>
-          <h1 id="site-title">
-            <a href="/">${g.site_title}</a>
-          </h1>
-          <div id="slogan" class="">
-              ${g.site_slogan}
-          </div>
-        </header>
 
-      <div id="main">
-        <div id="content">
-          ${content()}
-        </div>
-        <div class="clearfix"></div>
+  <py:with vars="messages = list(h._flash.pop_messages())">
+    <div class="flash-banner-box" py:if="len(messages)">
+      <div class="flash-banner ${m.category}" py:for="m in messages">
+        ${m.message}
       </div>
     </div>
+  </py:with>
+  <div id="page" class="container">
+    <header class="span-24">
+      <nav>
+        <a py:if="c.account is None" href="/login">Login or register</a>
+        <py:if test="c.account is not None">
+          <a href="/settings">My Profile</a>
+          <a href="/logout">Logout</a>
+        </py:if>
+      </nav>
+      <h1 id="site-title"><a href="/">${g.site_title}</a></h1>
+      <div id="slogan" class="">${g.site_slogan}</div>
+    </header>
 
-    <footer class="container">
+    <div id="main" class="span-24">
+      ${content()}
+    </div>
+
+    <footer class="span-24">
       <ul class="credits">
         <li>&copy; 2011: <a href="http://okfn.org">The Open Knowledge Foundation</a></li>
         <li><a href="http://www.opendefinition.org/okd/">
@@ -85,8 +78,8 @@
         <li><a href="http://okfn.org/contact/">Contact</a></li>
       </ul>
     </footer>
+  </div>
 
-</div>
 <script type="text/javascript">
   var _gaq = _gaq || [];
   _gaq.push(['_setAccount', 'UA-8271754-17']);

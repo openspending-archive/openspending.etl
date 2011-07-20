@@ -23,10 +23,10 @@ MOCK_CKAN = {
 class TestSourcesController(ControllerTestCase):
 
     @h.patch('openspending.etl.ui.controllers.sources.ckan.CkanClient')
-    def test_index(self, ckan_mock):
+    def test_ckan_packages(self, ckan_mock):
         ckan_mock.return_value = h.mock_ckan(MOCK_CKAN)
 
-        response = self.app.get(url(controller='sources', action='index'))
+        response = self.app.get(url(controller='sources', action='ckan_packages'))
 
         # Show title for packages with resources
         assert '<a href="http://ckan.net/package/foo">Foo</a>' in response

@@ -27,6 +27,8 @@ def make_map():
     map.connect('/after_logout', controller='account', action='after_logout')
 
     map.connect('/sources', controller='sources', action='index')
+    map.connect('/sources/_ckan_packages', controller='sources', action='ckan_packages')
+
     map.connect('/sources/validate/{package}/{resource}', controller='sources',
                 action='validate')
     map.connect('/sources/describe/{package}/{resource}', controller='sources',

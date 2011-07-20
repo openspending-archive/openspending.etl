@@ -25,17 +25,24 @@ log = logging.getLogger(__name__)
 
 class SourcesController(BaseController):
 
-    def index(self, error=False, form_fields=None):
+    def index(self):
+        c.group = ckan.openspending_group
+        return render('sources/index.html')
+
+    def ckan_packages(self):
         ckan_client = ckan.get_client()
+
         c.packages = []
-        c.group = ckan_client.group_entity_get(ckan.openspending_group)
-        for pkg_name in c.group.get('packages'):
+
+        group = ckan_client.group_entity_get(ckan.openspending_group)
+
+        for pkg_name in group.get('packages'):
             try:
                 c.packages.append(ckan_client.package_entity_get(pkg_name))
             except ckan.CkanApiError, cae:
                 log.error(cae)
-        c.template = 'sources/index.html'
-        return render(c.template)
+
+        return render('sources/_ckan_packages.html')
 
     # this really does not belong here
     def _load_ckan(self, package, resource):

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html
+  xmlns="http://www.w3.org/1999/xhtml"
+  xmlns:i18n="http://genshi.edgewall.org/i18n"
+  xmlns:py="http://genshi.edgewall.org/"
+  xmlns:xi="http://www.w3.org/2001/XInclude"
+  >
+
+  <body>
+    <table>
+      <thead>
+        <tr>
+          <th>Package</th>
+          <th>Resource</th>
+          <th>Format</th>
+          <th>&nbsp;</th>
+        </tr>
+      </thead>
+      <tbody>
+        <py:for each="pkg in c.packages">
+          <tr py:for="res in pkg.get('resources', [])">
+            <py:choose test="">
+              <py:when test="res.get('position')==0">
+                <td><a href="${pkg.get('ckan_url')}">${pkg.get('title')}</a></td>
+              </py:when>
+              <py:otherwise>
+                <td></td>
+              </py:otherwise>
+            </py:choose>
+            <td>${res.get('description')}</td>
+            <td>${res.get('format')}</td>
+            <td>
+              <a href="${h.url(controller='sources',
+                               action='mapping_form',
+                               package=pkg.get('name'),
+                               resource=res.get('id'))}">import</a>
+              </td>
+          </tr>
+        </py:for>
+      </tbody>
+    </table>
+  </body>
+
+</html>
