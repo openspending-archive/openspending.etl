@@ -10,7 +10,6 @@
 # Paste Script.
 from __future__ import absolute_import
 
-from .load import LoadCommand
 from .mapping_convert import MappingConvertCommand
 from .mapping_url import MappingUrlCommand
 from .ckan import CkanCommand

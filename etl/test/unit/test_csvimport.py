@@ -4,10 +4,10 @@ from urlparse import urlunparse
 
 from openspending.lib import json
 from openspending.model import Dataset, Entry, default_mapping
-from openspending.etl.ui.test import TestCase, DatabaseTestCase, helpers as h
+from openspending.etl.test import TestCase, DatabaseTestCase, helpers as h
 
-from openspending.etl.ui.lib.csvimport import DatasetImporter
-from openspending.etl.ui.lib.mappingimporter import MappingImporter
+from openspending.etl.csvimport import DatasetImporter
+from openspending.etl.mappingimporter import MappingImporter
 
 def check_throws_one_error(self, importer):
     h.assert_equal(len(importer.errors), 1)
@@ -194,8 +194,8 @@ class TestCSVImportDatasets(TestCase):
         from pkg_resources import resource_isdir as isdir, resource_listdir as listdir
         base = 'test/fixtures/csvimport'
         return filter(
-            lambda e: isdir('openspending.etl.ui', join(base, e)),
-            listdir('openspending.etl.ui', base)
+            lambda e: isdir('openspending.etl', join(base, e)),
+            listdir('openspending.etl', base)
         )
 
     def test_all_mappings(self):

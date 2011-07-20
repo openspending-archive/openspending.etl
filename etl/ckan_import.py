@@ -3,9 +3,9 @@ from urllib2 import urlopen
 from openspending.lib import ckan, json
 from openspending.model import Model
 from openspending.logic.model import save_model
-from openspending.etl.ui.lib.mappingimporter import MappingImporter
-from openspending.etl.ui.lib.resourceimport import package_and_resource, load_from_ckan
-from openspending.etl.ui.lib.csvimport import load_dataset
+from openspending.etl.mappingimporter import MappingImporter
+from openspending.etl.resourceimport import package_and_resource, load_from_ckan
+from openspending.etl.csvimport import load_dataset
 
 class _FakeAccount(object):
     def __init__(self, name): self.name = name

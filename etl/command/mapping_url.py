@@ -10,8 +10,8 @@ class MappingUrlCommand(OpenSpendingETLCommand):
         super(MappingUrlCommand, self).command()
         self._check_args_length(1)
 
-        from openspending.ui.lib.mappingimporter import MappingImporter
-        from openspending.ui.lib.helpers import json
+        from openspending.lib import json
+        from openspending.mappingimporter import MappingImporter
 
         mapping_url = self.args[0]
         importer = MappingImporter()

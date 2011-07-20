@@ -4,7 +4,7 @@ from bson.dbref import DBRef
 from openspending.model import (Changeset, ChangeObject, Classifier, Dataset,
                                 Entry, Entity, mongo)
 
-from openspending.etl.ui.test import LoaderTestCase, helpers as h
+from openspending.etl.test import LoaderTestCase, helpers as h
 
 test_data = {
     (u'red', u'flowery'): 30.0,

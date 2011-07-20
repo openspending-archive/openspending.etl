@@ -3,7 +3,7 @@ from __future__ import print_function
 import sys
 
 from openspending.etl.command.base import OpenSpendingETLCommand
-from openspending.etl.ui.lib.ckan_import import ckan_import
+from openspending.etl.ckan_import import ckan_import
 
 class ImportCommand(OpenSpendingETLCommand):
 
@@ -72,8 +72,8 @@ class CSVImportCommand(ImportCommand):
         super(CSVImportCommand, self).command()
         self._check_args_length(1)
 
-        from openspending.ui.lib.csvimport import load_dataset
-        from openspending.ui.lib import json
+        from openspending.etl.csvimport import load_dataset
+        from openspending.lib import json
 
         def json_of_url(url):
             import urllib2
@@ -157,7 +157,8 @@ class ImportReportCommand(OpenSpendingETLCommand):
         super(ImportReportCommand, self).command()
         self._check_args_length(0)
 
-        from openspending.lib import ckan, json
+        from openspending.lib import ckan
+        from openspending.lib import json
 
         self._load_config()
 

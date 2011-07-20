@@ -2,10 +2,10 @@ import logging
 
 from celery.task import task
 
-from openspending.etl.ui.lib import aggregator
-from openspending.etl.ui.lib.csvimport import load_dataset as csv_load_dataset
-from openspending.etl.ui.lib.cubes import Cube
+from openspending.lib import aggregator
 
+from openspending.csvimport import load_dataset as csv_load_dataset
+from openspending.cubes import Cube
 
 @task
 def load_dataset(resource_url, model, **kwargs):

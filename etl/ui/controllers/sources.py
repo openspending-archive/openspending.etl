@@ -14,10 +14,11 @@ from openspending.model import Dataset, Model
 from openspending.ui.lib import jsonp
 from openspending.ui.lib import helpers as h
 from openspending.ui.lib.authz import requires
+
 from openspending.etl.ui.lib.base import BaseController, render
-from openspending.etl.ui.lib.csvimport import DatasetImporter
-from openspending.etl.ui.lib.resourceimport import package_and_resource, load_from_ckan
-from openspending.etl.ui.lib.csvimport import validate_model, resource_lines, load_dataset
+from openspending.etl.csvimport import DatasetImporter
+from openspending.etl.csvimport import validate_model, resource_lines, load_dataset
+from openspending.etl.resourceimport import package_and_resource, load_from_ckan
 
 import logging
 log = logging.getLogger(__name__)

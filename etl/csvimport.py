@@ -7,14 +7,15 @@ import colander
 
 from openspending.lib import util
 from openspending.lib import unicode_dict_reader as udr
-from openspending.ui.lib.times import for_datestrings, EMPTY_DATE, GRANULARITY
 from openspending.lib.solr_util import build_index, drop_index
 from openspending.model import Dataset, Classifier, Entity
-from openspending.etl.ui.lib.ilines import ilines
+from openspending.ui.lib.times import for_datestrings, EMPTY_DATE, GRANULARITY
+
+from openspending.etl.ilines import ilines
+from openspending.etl.loader import Loader
 from openspending.etl.ui.forms.sources import Mapping as MappingForm
 from openspending.etl.ui.forms.sources import Dataset as DatasetForm
 from openspending.etl.ui.forms.entry import make_validator, PLACEHOLDER
-from openspending.etl.ui.lib.loader import Loader
 
 log = logging.getLogger(__name__)
 

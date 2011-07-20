@@ -10,15 +10,15 @@ from pylons.i18n import _
 
 from repoze.who.api import get_api
 
-from openspending.etl.ui import model
-from openspending.etl.ui.lib.account import Register, Settings
-from openspending.etl.ui.lib import helpers as h
-from openspending.etl.ui.lib.authz import requires
+from openspending import model
+from openspending.ui.lib.account import Register, Settings
+from openspending.ui.lib import helpers as h
+from openspending.ui.lib.authz import requires
+from openspending.ui.lib.security import generate_password_hash
+
 from openspending.etl.ui.lib.base import BaseController, render
-from openspending.etl.ui.lib.security import generate_password_hash
 
 log = logging.getLogger(__name__)
-
 
 class AccountController(BaseController):
 
