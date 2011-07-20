@@ -10,19 +10,7 @@ setup(
     url='http://github.com/okfn/openspending.etl',
 
     install_requires=[
-        "Pylons==1.0",
-        "Genshi==0.6",
-        "repoze.who==2.0b1",
-        "repoze.who-friendlyform==1.0.8",
-        "Unidecode==0.04.7",
-        "python-dateutil==1.5",
-        "pyutilib.component.core==4.3.1",
         "celery-pylons==2.1.4dev",
-        "Babel==0.9.6",
-        "ckanclient==0.7",
-        "colander==0.9.3",
-        "distribute==0.6.19",
-        "mock==0.7.2",
         "openspending"
     ],
     setup_requires=[
