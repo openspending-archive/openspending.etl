@@ -1,4 +1,4 @@
-# OpenSpending ETL UI
+# OpenSpending ETL
 
 ## Developer installation
 
@@ -10,6 +10,10 @@ Install the application and copy configuration templates.
     $ hash -r # (or rehash in zsh)
     $ cp development.ini_tmpl development.ini
     $ cp test.ini_tmpl test.ini
+
+Link egg-info directory to make paster find it:
+
+    $ ln -s .packageroot/openspending.etl.egg-info .
 
 Run the tests
 

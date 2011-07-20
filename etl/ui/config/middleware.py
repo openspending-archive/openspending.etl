@@ -112,14 +112,6 @@ def make_app(global_conf, full_stack=True, static_files=True, **app_conf):
                         cache_max_age=max_age)
         static_parsers = [static_app, app]
 
-        # Configurable extra static file paths
-        extra_public_paths = config.get('extra_public_paths')
-        if extra_public_paths:
-            static_parsers = [StaticURLParser(public_path.strip(),
-                                              cache_max_age=max_age) \
-                              for public_path in \
-                              extra_public_paths.split(' ')] + static_parsers
-
         app = Cascade(static_parsers)
 
     return app

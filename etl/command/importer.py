@@ -2,14 +2,14 @@ from __future__ import print_function
 
 import sys
 
-from openspending.command.base import OpenSpendingCommand
+from openspending.etl.command.base import OpenSpendingETLCommand
 from openspending.etl.ui.lib.ckan_import import ckan_import
 
-class ImportCommand(OpenSpendingCommand):
+class ImportCommand(OpenSpendingETLCommand):
 
     @classmethod
     def standard_parser(cls, *args, **kwargs):
-        parser = OpenSpendingCommand.standard_parser(*args, **kwargs)
+        parser = OpenSpendingETLCommand.standard_parser(*args, **kwargs)
 
         parser.add_option('-n', '--dry-run',
                           action="store_true", dest='dry_run', default=False,
@@ -148,10 +148,10 @@ class CKANImportCommand(ImportCommand):
 
         self.report_errors(errors)
 
-class ImportReportCommand(OpenSpendingCommand):
+class ImportReportCommand(OpenSpendingETLCommand):
     summary = "Report on errors from all known datasets."
 
-    parser = OpenSpendingCommand.standard_parser()
+    parser = OpenSpendingETLCommand.standard_parser()
 
     def command(self):
         super(ImportReportCommand, self).command()

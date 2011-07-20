@@ -22,11 +22,17 @@ beaker.session.secret = ${app_instance_secret}
 app_instance_uuid = ${app_instance_uuid}
 
 # ################### #
-# OpenSpending config # 
+# OpenSpending config #
 # ################### #
+
+# i18n
+# lang = en
 
 # Sandbox mode: all users are admins by default
 openspending.sandbox_mode = true
+
+# Use celery for background jobs
+# openspending.use_celery = true
 
 # Numerous site-configurable strings
 # openspending.site_title = OpenSpending ETL
@@ -44,6 +50,11 @@ openspending.mongodb.database = openspending_dev
 
 # Solr
 openspending.solr.url = http://localhost:8983/solr
+
+# CKAN
+# openspending.ckan_group = openspending
+# openspending.ckan_location = http://ckan.net/api
+openspending.ckan_api_key = your_ckan_api_key
 
 # Logging configuration:
 #   http://wiki.pylonshq.com/display/pylonsdocs/Logging

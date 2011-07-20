@@ -146,7 +146,7 @@ class SourcesController(BaseController):
 
     @requires("admin")
     def load(self, package, resource, model):
-        use_celery = config.get('use_celery', 'true') != 'false'
+        use_celery = config.get('openspending.use_celery', 'true') != 'false'
         max_errors = 25 # TODO: make this tunable
 
         from openspending.etl.ui.lib.tasks import load_dataset

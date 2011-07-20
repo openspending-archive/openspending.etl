@@ -13,3 +13,4 @@ port = 5001
 
 [app:main]
 use = config:development.ini
+set openspending.mongodb.database = openspending_test

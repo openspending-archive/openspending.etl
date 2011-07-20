@@ -1,10 +1,10 @@
-from openspending.command.base import OpenSpendingCommand
+from openspending.etl.command.base import OpenSpendingETLCommand
 
-class MappingConvertCommand(OpenSpendingCommand):
+class MappingConvertCommand(OpenSpendingETLCommand):
     summary = "Convert mapping file/url to JSON."
     usage = "<mapping_url>"
 
-    parser = OpenSpendingCommand.standard_parser()
+    parser = OpenSpendingETLCommand.standard_parser()
 
     def command(self):
         super(MappingConvertCommand, self).command()

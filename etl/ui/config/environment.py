@@ -9,12 +9,11 @@ from pylons import config
 import pylons
 from webhelpers import markdown
 
-import openspending.ui.lib.helpers as helpers
-
-import openspending.etl.ui.lib.app_globals as app_globals
-from openspending.etl.ui.config.routing import make_map
-
 from openspending.model import init_mongo
+from openspending.ui.lib import helpers
+
+from openspending.etl.ui.config.routing import make_map
+from openspending.etl.ui.lib import app_globals
 
 class MultiDomainTranslator(object):
     """ This is used by Genshi to allow using multiple domains within
@@ -74,14 +73,11 @@ def load_environment(global_conf, app_conf):
 
     ## redo template setup to use genshi.search_path (so remove std template setup)
     template_paths = [paths['templates'][0]]
-    extra_template_paths = config.get('extra_template_paths')
-    if extra_template_paths:
-        # must be first for them to override defaults
-        template_paths = extra_template_paths.split(' ') + template_paths
 
     # Translator (i18n)
     config['openspending.etl.ui.translations'] = MultiDomainTranslator([config.get('lang', 'en')])
     translator = Translator(config['openspending.etl.ui.translations'])
+
     def template_loaded(template):
         translator.setup(template)
 
@@ -92,4 +88,11 @@ def load_environment(global_conf, app_conf):
 
     import celerypylons # side effect: set os.environ["CELERY_LOADER"] to Pylons Celery Loader
 
+    # Configure ckan
+    import openspending.lib.ckan as ckan
+    ckan.configure(config)
+
+    # Configure Solr
+    import openspending.lib.solr_util as solr
+    solr.configure(config)
 

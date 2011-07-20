@@ -1,6 +1,6 @@
-from openspending.command.base import OpenSpendingCommand
+from openspending.etl.command.base import OpenSpendingETLCommand
 
-class LoadCommand(OpenSpendingCommand):
+class LoadCommand(OpenSpendingETLCommand):
     summary = "Load external data into domain model."
     usage = "<dataset>"
     description = """\
@@ -12,7 +12,7 @@ class LoadCommand(OpenSpendingCommand):
                       gla:        GLA (untested)
                   """
 
-    parser = OpenSpendingCommand.standard_parser()
+    parser = OpenSpendingETLCommand.standard_parser()
 
     def command(self):
         super(LoadCommand, self).command()

@@ -2,9 +2,9 @@ from __future__ import print_function
 
 import sys
 
-from openspending.command.base import OpenSpendingCommand
+from openspending.etl.command.base import OpenSpendingETLCommand
 
-class CkanCommand(OpenSpendingCommand):
+class CkanCommand(OpenSpendingETLCommand):
     summary = "Interface to OpenSpending-specific CKAN operations"
     usage = "<subcommand> [args, ...]"
     description = """\
@@ -14,7 +14,7 @@ class CkanCommand(OpenSpendingCommand):
                     hintrm <pkgname> <uuid>:            Remove any hint on resource by UUID.
                   """
 
-    parser = OpenSpendingCommand.standard_parser()
+    parser = OpenSpendingETLCommand.standard_parser()
 
     def command(self):
         super(CkanCommand, self).command()
@@ -23,7 +23,7 @@ class CkanCommand(OpenSpendingCommand):
             CkanCommand.parser.print_help()
             return 1
 
-        from openspending.ui.lib import ckan
+        from openspending.lib import ckan
 
         self.c = ckan.get_client()
 
@@ -57,7 +57,7 @@ class CkanCommand(OpenSpendingCommand):
             raise self.BadCommand("Usage: paster ckan check <pkgname>")
 
         package_name = self.args[1]
-        from openspending.ui.lib import ckan, json
+        from openspending.lib import ckan, json
 
         p = ckan.Package(package_name)
 
