@@ -48,7 +48,7 @@ class CkanCommand(OpenSpendingETLCommand):
         package_name = self.args[1]
 
         from pprint import pprint
-        from openspending.ui.lib import ckan
+        from openspending.lib import ckan
 
         pprint(self.c.package_entity_get(package_name))
 

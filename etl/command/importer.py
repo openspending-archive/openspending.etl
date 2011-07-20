@@ -124,7 +124,7 @@ class CKANImportCommand(ImportCommand):
         super(CKANImportCommand, self).command()
         self._check_args_length(1)
 
-        from openspending.ui.lib import ckan, json
+        from openspending.lib import ckan, json
 
         package = ckan.Package(self.args[0])
 
@@ -157,7 +157,7 @@ class ImportReportCommand(OpenSpendingETLCommand):
         super(ImportReportCommand, self).command()
         self._check_args_length(0)
 
-        from openspending.ui.lib import ckan, json
+        from openspending.lib import ckan, json
 
         self._load_config()
 
