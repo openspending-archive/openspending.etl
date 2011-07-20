@@ -1,12 +1,16 @@
 import cgi
 
 from paste.urlparser import PkgResourcesParser
+from pylons import request, tmpl_context as c
+from pylons.controllers.util import forward, abort
 from pylons.middleware import error_document_template
 from webhelpers.html.builder import literal
 
-from openspending.etl.ui.lib.base import BaseController
+from openspending.etl.ui.lib.base import BaseController, render
+
 
 class ErrorController(BaseController):
+
     """Generates error documents as and when they are required.
 
     The ErrorDocuments middleware forwards to ErrorController when error
@@ -16,16 +20,33 @@ class ErrorController(BaseController):
     ErrorDocuments middleware in your config/middleware.py file.
 
     """
+
+    rendered_error_codes = ("404", "403", "500")
+
     def document(self):
-        """Render the error document"""
-        request = self._py_object.request
+        """Render the error document - show custom template for 404"""
         resp = request.environ.get('pylons.original_response')
-        content = literal(resp.body) or cgi.escape(request.GET.get('message', ''))
-        page = error_document_template % \
-            dict(prefix=request.environ.get('SCRIPT_NAME', ''),
-                 code=cgi.escape(request.GET.get('code', str(resp.status_int))),
-                 message=content)
-        return page
+        code = cgi.escape(request.GET.get('code', str(resp.status_int)))
+        content = (literal(resp.body) or
+                   cgi.escape(request.GET.get('message', '')))
+
+        if code in self.rendered_error_codes:
+            c.code = code
+            c.message = content
+            return render('../templates/%s.html' % code)
+        else:
+            page = error_document_template % \
+                dict(prefix=request.environ.get('SCRIPT_NAME', ''),
+                     code=code,
+                     message=content)
+            return page
+
+    def render(self, code):
+        if code in self.rendered_error_codes:
+            c.code = code
+            c.message = code
+            return render('../templates/%s.html' % code)
+        abort(404)
 
     def img(self, id):
         """Serve Pylons' stock images"""
@@ -39,6 +60,5 @@ class ErrorController(BaseController):
         """Call Paste's FileApp (a WSGI application) to serve the file
         at the specified path
         """
-        request = self._py_object.request
         request.environ['PATH_INFO'] = '/%s' % path
-        return PkgResourcesParser('pylons', 'pylons')(request.environ, self.start_response)
+        return forward(PkgResourcesParser('pylons', 'pylons'))
