@@ -1,0 +1,8 @@
+Original Field,OpenSpending Field,Default value,Label,Description,DataType,ObjectType,Classifier taxonomy,Commentary
+paid_by,from,,Payer,Payer,string,entity
+date,time,,Date,Date,date,value
+transaction_id,transactionid,,Reference,Reference,string,value
+amount,amount,,Amount,Amount,float,value
+paid_to,to,,Payee,Payee,string,entity
+spending_area,spendingarea,,Spending Area,Spending Area,string,value
+currency,currency,GBP,Currency,Currency,string,value

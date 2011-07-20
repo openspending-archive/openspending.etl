@@ -9,36 +9,46 @@ Run the OpenSpending test suite by running
 in the root of the repository, while in an active virtualenv. See
 doc/install.rst for more information.
 """
-import os
-import sys
 
-import pylons
-from pylons.i18n.translation import _get_translator
-from paste.deploy import loadapp
-from pylons import url
 from paste.script.appinstall import SetupCommand
+from pylons import url, config
 from routes.util import URLGenerator
 from webtest import TestApp
+import pylons.test
 
-from openspending.test import helpers, TestCase, DatabaseTestCase
-from openspending.ui.test import ControllerTestCase
-
-from openspending.etl.ui.config.environment import load_environment
+from helpers import clean_all
 
 __all__ = [
     'environ', 'url', 'TestCase', 'DatabaseTestCase', 'ControllerTestCase'
 ]
 
+# Invoke websetup with the current config file
+SetupCommand('setup-app').run([config['__file__']])
+
 environ = {}
-
-here_dir = os.path.dirname(os.path.realpath(os.path.abspath(__file__)))
-conf_dir = os.path.dirname(os.path.dirname(os.path.dirname(here_dir)))
-
-sys.path.insert(0, conf_dir)
 
 # Clear everything before any tests are run.
 def setup_module():
-    helpers.clean_all()
+    clean_all()
+
+class TestCase(object):
+    def setup(self):
+        pass
+
+    def teardown(self):
+        pass
+
+class DatabaseTestCase(TestCase):
+    def teardown(self):
+        clean_all()
+        super(DatabaseTestCase, self).teardown()
+
+class ControllerTestCase(DatabaseTestCase):
+    def __init__(self, *args, **kwargs):
+        wsgiapp = pylons.test.pylonsapp
+        self.app = TestApp(wsgiapp)
+        url._push_object(URLGenerator(config['routes.map'], environ))
+        super(DatabaseTestCase, self).__init__(*args, **kwargs)
 
 class LoaderTestCase(DatabaseTestCase):
     '''
@@ -52,7 +62,7 @@ class LoaderTestCase(DatabaseTestCase):
         return loader
 
     def _make_entry(self, loader, **kwargs):
-        from openspending.etl.ui.model import Entry
+        from openspending.model import Entry
 
         entry = {'name': 'Test Entry',
                  'amount': 1000.00,

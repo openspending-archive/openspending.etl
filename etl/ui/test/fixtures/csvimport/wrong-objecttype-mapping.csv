@@ -1,0 +1,6 @@
+"Original Field","OpenSpending Field","Default value","Label","Description","DataType","ObjectType","Classifier taxonomy","Commentary"
+"paid_by","from","x","y","z","string","entit","unknown","i"
+"date","time","x","y","z","date","value","unknown","i"
+"amount","amount","x","y","z","float","value","unknown","i"
+"paid_to","to","x","y","z","string","entity","unknown","i"
+"currency","currency","GBP","y","z","string","value","unknown","i"
