@@ -1,4 +1,4 @@
 /pyenv
 /*.ini
-/.packageroot/*.egg-info
 /.pylons_data
+*.egg-info
