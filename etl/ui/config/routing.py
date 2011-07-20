@@ -18,6 +18,8 @@ def make_map():
     map.connect('/error/{action}', controller='error')
     map.connect('/error/{action}/{id}', controller='error')
 
+    map.connect('/', controller='home', action='index')
+
     map.connect('/login', controller='account', action='login')
     map.connect('/register', controller='account', action='register')
     map.connect('/settings', controller='account', action='settings')
