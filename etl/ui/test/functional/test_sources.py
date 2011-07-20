@@ -1,24 +1,7 @@
+from openspending.lib import json
 from openspending.etl.ui.test import ControllerTestCase, url, helpers as h
 
-MOCK_CKAN = {
-    'foo': {
-        'name': 'foo',
-        'title': 'Foo',
-        'groups': ['openspending'],
-        'ckan_url': 'http://ckan.net/package/foo',
-        'description': 'The Foo package.',
-        'resources': [
-            {'id': 123, 'position': 0, 'description': 'Foo resource 0', 'format': 'CSV'}
-        ]
-    },
-    'bar': {
-        'name': 'bar',
-        'title': 'Bar',
-        'groups': ['openspending'],
-        'ckan_url': 'http://ckan.net/package/bar',
-        'description': 'The Bar package.',
-    }
-}
+MOCK_CKAN = json.load(h.fixture_file('mock_ckan.json'))
 
 class TestSourcesController(ControllerTestCase):
 
@@ -28,15 +11,15 @@ class TestSourcesController(ControllerTestCase):
 
         response = self.app.get(url(controller='sources', action='ckan_packages'))
 
-        # Show title for packages with resources
-        assert '<a href="http://ckan.net/package/foo">Foo</a>' in response
-        # But don't for those without
-        assert 'http://ckan.net/package/bar' not in response
+        print response
 
-        # Show resource details
-        assert 'Foo resource 0' in response
+        # Show title for packages
+        assert '<a href="http://ckan.net/package/baz">The Baz dataset</a>' in response
 
-        # Show 'import' link for resources
-        import_resource_url = url(controller='sources', action='mapping_form',
-                                  package='foo', resource=123)
-        assert '<a href="%s">import</a>' % import_resource_url in response
+        # Show 'import' link for importable packages
+        import_url = url(controller='sources', action='import', package='bar')
+        assert '<a href="%s">' % import_url in response
+
+        # Show 'diagnose' link for non-importable packages
+        diagnose_url = url(controller='sources', action='diagnose', package='baz')
+        assert '<a href="%s">' % diagnose_url in response

@@ -11,32 +11,25 @@
       <thead>
         <tr>
           <th>Package</th>
-          <th>Resource</th>
-          <th>Format</th>
-          <th>&nbsp;</th>
+          <th>Import status</th>
         </tr>
       </thead>
       <tbody>
-        <py:for each="pkg in c.packages">
-          <tr py:for="res in pkg.get('resources', [])">
-            <py:choose test="">
-              <py:when test="res.get('position')==0">
-                <td><a href="${pkg.get('ckan_url')}">${pkg.get('title')}</a></td>
-              </py:when>
-              <py:otherwise>
-                <td></td>
-              </py:otherwise>
-            </py:choose>
-            <td>${res.get('description')}</td>
-            <td>${res.get('format')}</td>
-            <td>
-              <a href="${h.url(controller='sources',
-                               action='mapping_form',
-                               package=pkg.get('name'),
-                               resource=res.get('id'))}">import</a>
-              </td>
-          </tr>
-        </py:for>
+        <tr py:for="pkg in c.packages">
+            <td><a href="${pkg['ckan_url']}">${pkg['title']}</a></td>
+            <td py:choose="pkg.is_importable()">
+              <a py:when="True" href="${h.url(controller='sources',
+                                              action='import',
+                                              package=pkg['name'])}">
+                Import
+              </a>
+              <a py:otherwise="" href="${h.url(controller='sources',
+                                               action='diagnose',
+                                               package=pkg['name'])}">
+                Not importable &ndash; view diagnostics
+              </a>
+            </td>
+        </tr>
       </tbody>
     </table>
   </body>

@@ -1,4 +1,5 @@
 from pylons import config
+from pylons.decorators.cache import beaker_cache
 
 from urllib import unquote_plus as unquote
 
@@ -29,18 +30,12 @@ class SourcesController(BaseController):
         c.group = ckan.openspending_group
         return render('sources/index.html')
 
+    @beaker_cache(expire=600, type='memory')
     def ckan_packages(self):
-        ckan_client = ckan.get_client()
-
-        c.packages = []
-
-        group = ckan_client.group_entity_get(ckan.openspending_group)
-
-        for pkg_name in group.get('packages'):
-            try:
-                c.packages.append(ckan_client.package_entity_get(pkg_name))
-            except ckan.CkanApiError, cae:
-                log.error(cae)
+        try:
+            c.packages = ckan.openspending_packages()
+        except ckan.CkanApiError as e:
+            log.error(e)
 
         return render('sources/_ckan_packages.html')
 
