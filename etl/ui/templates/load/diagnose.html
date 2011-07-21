@@ -2,7 +2,7 @@
   xmlns:i18n="http://genshi.edgewall.org/i18n"
   xmlns:xi="http://www.w3.org/2001/XInclude" py:strip="">
 
-  <py:def function="nav_class">nav-sources</py:def>
+  <py:def function="nav_class">nav-load</py:def>
   <py:def function="page_title">Import diagnostics (${c.pkg['name']})</py:def>
 
   <div py:def="content" class="content">
@@ -12,7 +12,7 @@
     <p py:choose="c.pkg.is_importable()">
       <py:when test="True">
         This package looks like it's fine.
-        <a href="${h.url(controller='sources', action='import', package=c.pkg['name'])}">
+        <a href="${h.url(controller='load', action='start', package=c.pkg['name'])}">
           Import it?
         </a>
       </py:when>

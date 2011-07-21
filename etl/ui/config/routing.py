@@ -26,28 +26,10 @@ def make_map():
     map.connect('/after_login', controller='account', action='after_login')
     map.connect('/after_logout', controller='account', action='after_logout')
 
-    map.connect('/sources', controller='sources', action='index')
-    map.connect('/sources/_ckan_packages', controller='sources', action='ckan_packages')
+    map.connect('/load', controller='load', action='index')
+    map.connect('/load/_packages', controller='load', action='packages')
 
-    map.connect('/sources/diagnose/{package}', controller='sources', action='diagnose')
-    map.connect('/sources/import/{package}', controller='sources', action='import')
-
-    map.connect('/sources/validate/{package}/{resource}', controller='sources',
-                action='validate')
-    map.connect('/sources/describe/{package}/{resource}', controller='sources',
-                action='describe_form', conditions=dict(method=['GET']))
-    map.connect('/sources/describe/{package}/{resource}', controller='sources',
-                action='describe_save', conditions=dict(method=['POST']))
-    map.connect('/sources/model/{id}', controller='sources',
-                action='model', conditions=dict(method=['GET']))
-
-    map.connect('/sources/mapping/{package}/{resource}', controller='sources',
-                action='mapping_form')
-
-    map.connect('/sources/load/{package}/{resource}/{model}',
-                controller='sources', action='load')
-    map.connect('/sources/task/{operation}/{task_id}',
-                controller='sources', action='task')
-
+    map.connect('/load/diagnose/{package}', controller='load', action='diagnose')
+    map.connect('/load/start/{package}', controller='load', action='start')
 
     return map

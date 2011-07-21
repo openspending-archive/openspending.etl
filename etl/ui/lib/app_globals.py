@@ -35,9 +35,14 @@ class Globals(object):
             'openspending.lists_link',
             'http://lists.okfn.org/mailman/listinfo/openspending-discuss'
         )
-        self.sandbox_mode = config.get(
+        self.sandbox_mode = _parse_bool(config.get(
             'openspending.sandbox_mode',
             'False'
-        )
-        self.sandbox_mode = self.sandbox_mode.lower() in ("yes", "true", "t", "1")
+        ))
+        self.use_celery = _parse_bool(config.get(
+            'use_celery',
+            'False'
+        ))
 
+def _parse_bool(s):
+    return s.lower() in ("yes", "true", "on", "t", "1")
