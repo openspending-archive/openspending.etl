@@ -1,8 +1,7 @@
 from pylons import url
-from pylons.controllers.util import redirect
 
-from openspending.etl.ui.lib.base import BaseController
+from openspending.etl.ui.lib.base import BaseController, render
 
 class HomeController(BaseController):
     def index(self):
-        return redirect(url(controller='sources', action='index'))
+        return render('home/index.html')

@@ -1,0 +1,27 @@
+<html xmlns:py="http://genshi.edgewall.org/"
+  xmlns:i18n="http://genshi.edgewall.org/i18n"
+  xmlns:xi="http://www.w3.org/2001/XInclude" py:strip="">
+
+  <py:def function="nav_class">nav-home</py:def>
+  <py:def function="page_title">Extract, Transform, Load</py:def>
+
+  <div py:def="content" class="content">
+    <h2>Welcome to OpenSpending ETL</h2>
+    <h3>Please select a task&hellip;</h3>
+
+    <ul>
+      <li>
+        <a href="${h.url(controller='sources', action='index')}">
+          Import a dataset
+        </a>
+      </li>
+      <li>Generate an OpenSpending model for a dataset (Not Yet Implemented!)</li>
+      <py:if test="g.sandbox_mode">
+      <li>Remove a package from the sandbox (Not Yet Implemented!)</li>
+      <li>Dump all data from the sandbox (Not Yet Implemented!)</li>
+      </py:if>
+    </ul>
+  </div>
+
+  <xi:include href="../layout.html" />
+</html>
