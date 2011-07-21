@@ -117,7 +117,7 @@ class CKANImportCommand(ImportCommand):
                       help="UUID of CKAN resource containing entry data.")
 
     parser.add_option('--use-ckan-tags', action="store_true",
-                      dest='use_ckan_tags', default=False,
+                      dest='use_ckan_tags', default=True,
                       help="Use CKAN to find resource UUID and mapping URL.")
 
     def command(self):
