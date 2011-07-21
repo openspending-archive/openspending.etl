@@ -27,10 +27,6 @@ class Globals(object):
             'openspending.wiki_link',
             'http://wiki.openspending.org'
         )
-        self.blog_link = config.get(
-            'openspending.blog_link',
-            'http://wheredoesmymoneygo.org/blog/'
-        )
         self.api_link = config.get(
             'openspending.api_link',
             'http://wiki.openspending.org/API'
@@ -39,5 +35,9 @@ class Globals(object):
             'openspending.lists_link',
             'http://lists.okfn.org/mailman/listinfo/openspending-discuss'
         )
-        self.forum_link = config.get('openspending.forum_link')
+        self.sandbox_mode = config.get(
+            'openspending.sandbox_mode',
+            'False'
+        )
+        self.sandbox_mode = self.sandbox_mode.lower() in ("yes", "true", "t", "1")
 
