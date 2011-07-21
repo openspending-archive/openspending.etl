@@ -22,13 +22,13 @@
         "resources": [
             {
                 "id": "123-model",
-                "url": "http://example.com/model.js",
+                "url": "http://example.com/barmodel.js",
                 "openspending_hint": "model",
                 "format": "application/json"
             },
             {
                 "id": "456-data",
-                "url": "http://example.com/data.csv",
+                "url": "http://example.com/bardata.csv",
                 "openspending_hint": "data",
                 "format": "text/csv",
                 "description": "Some bar data"

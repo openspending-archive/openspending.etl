@@ -1,0 +1,37 @@
+<html xmlns:py="http://genshi.edgewall.org/"
+  xmlns:i18n="http://genshi.edgewall.org/i18n"
+  xmlns:xi="http://www.w3.org/2001/XInclude" py:strip="">
+
+  <py:def function="nav_class">nav-sources</py:def>
+  <py:def function="page_title">Import diagnostics (${c.pkg['name']})</py:def>
+
+  <div py:def="content" class="content">
+    <h2>Import diagnostics</h2>
+    <h3>${c.pkg['title']} (${c.pkg['name']})</h3>
+
+    <p py:choose="c.pkg.is_importable()">
+      <py:when test="True">
+        This package looks like it's fine.
+        <a href="${h.url(controller='sources', action='import', package=c.pkg['name'])}">
+          Import it?
+        </a>
+      </py:when>
+      <py:otherwise>
+        We can't import this package. It should have precisely one <tt>model</tt>
+        URL or <tt>model:mapping</tt> URL, and precisely one <tt>data</tt> URL.
+        See below for information that should help you diagnose what's gone wrong.
+      </py:otherwise>
+    </p>
+
+    <dl>
+      <dt><tt>model</tt> URL</dt>
+      <dd>${Markup(c.pkg_diagnostics['model'])}</dd>
+      <dt><tt>model:mapping</tt> URL</dt>
+      <dd>${Markup(c.pkg_diagnostics['model:mapping'])}</dd>
+      <dt><tt>data</tt> URL</dt>
+      <dd>${Markup(c.pkg_diagnostics['data'])}</dd>
+    </dl>
+  </div>
+
+  <xi:include href="../layout.html" />
+</html>

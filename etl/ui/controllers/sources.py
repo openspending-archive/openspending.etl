@@ -39,6 +39,15 @@ class SourcesController(BaseController):
 
         return render('sources/_ckan_packages.html')
 
+    def diagnose(self, package):
+        c.pkg = ckan.Package(package)
+
+        c.pkg_diagnostics = {}
+        for hint in ('model', 'model:mapping', 'data'):
+            c.pkg_diagnostics[hint] = _url_or_error_for_package(c.pkg, hint)
+
+        return render('sources/diagnose.html')
+
     # this really does not belong here
     def _load_ckan(self, package, resource):
         c.package, c.resource = package_and_resource(package, resource)
@@ -178,3 +187,13 @@ class SourcesController(BaseController):
         c.operation = operation
         c.template = "sources/task.html"
         return render(c.template)
+
+def _url_or_error_for_package(pkg, hint):
+    try:
+        r = pkg.openspending_resource(hint)
+        if r:
+            return "<a href='%(url)s'>%(url)s</a>" % {"url": r["url"]}
+        else:
+            return "None set"
+    except ckan.ResourceError as e:
+        return "<span class='error-message'>%s</span>" % h.escape(e)
