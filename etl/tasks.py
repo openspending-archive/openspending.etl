@@ -1,3 +1,4 @@
+import sys
 import logging
 log = logging.getLogger(__name__)
 
@@ -6,16 +7,14 @@ from openspending.lib.cubes import Cube
 
 from openspending.etl.csvimport import load_dataset as csv_load_dataset
 
-def noop():
-    pass
+def ckan_import(package_name):
+    from openspending.lib import ckan
+    from openspending.etl.ckan_import import ckan_import
 
-def longrunner():
-    import time
-    for i in range(10):
-        log.info("%d", i)
-        time.sleep(1)
+    package = ckan.Package(package_name)
+    ckan_import(package, progress_callback=lambda x: log.info(x))
 
-def load_dataset(resource_url, model, **kwargs):
+def csv_import(resource_url, model, **kwargs):
     out = csv_load_dataset(resource_url, model, **kwargs)
     return out
 
@@ -46,3 +45,16 @@ def remove_entries(dataset_name):
     errors = Entry.c.remove({"dataset.name": dataset_name})
     log.info("Errors: %s" % errors)
 
+# What follow are helper tasks for testing the etl.command.daemon module.
+
+def test_noop():
+    pass
+
+def test_stdout():
+    print "Text to standard out"
+
+def test_stderr():
+    print >>sys.stderr, "Text to standard error"
+
+def test_args(*args):
+    print args

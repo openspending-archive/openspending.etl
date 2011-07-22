@@ -32,6 +32,7 @@ from __future__ import absolute_import, print_function
 import os
 import sys
 import logging
+import subprocess
 
 from daemon import DaemonContext
 from lockfile.pidlockfile import PIDLockFile, AlreadyLocked
@@ -46,10 +47,43 @@ class TaskNotFoundError(Exception):
 
 
 class PIDLockFileZeroTimeout(PIDLockFile):
+    """A simple subclass of PIDLockFile to curry the timeout to zero."""
+
     def acquire(self, *args, **kwargs):
         kwargs.update({'timeout': 0})
         super(PIDLockFileZeroTimeout, self).acquire(*args, **kwargs)
 
+def logfile_path(jobid):
+    """Return path to log file for job <jobid>"""
+    return os.path.join(sys.prefix, 'var', 'log', 'openspendingetld_%s.log' % jobid)
+
+def pidfile_path(jobid):
+    """Return path to pid file for job <jobid>"""
+    return os.path.join(sys.prefix, 'var', 'run', 'openspendingetld_%s.pid' % jobid)
+
+def job_running(jobid):
+    """\
+    Return True if job <jobid> is considered to be running by presence of pid
+    file.
+    """
+    return PIDLockFile(pidfile_path(jobid)).is_locked()
+
+def dispatch_job(jobid, config, task, args=None):
+    """\
+    Helper function to dispatch a job that will then daemonize.
+    """
+    if args is None:
+        args = ()
+
+    cmd = ['openspendingetld', jobid, config, task]
+    cmd.extend(args)
+
+    return subprocess.check_output(cmd)
+
+def job_log(jobid):
+    """Return contents of log for job <jobid>"""
+    with open(logfile_path(jobid)) as f:
+        return f.read()
 
 def main():
     args = sys.argv[1:]
@@ -66,16 +100,11 @@ def main():
 
     _create_directories()
 
-    logfile_path = os.path.join(sys.prefix, 'var',
-                                'log', 'openspendingetld_%s.log' % jobid)
-    pidfile_path = os.path.join(sys.prefix, 'var',
-                                'run', 'openspendingetld_%s.pid' % jobid)
-
-    pidfile = PIDLockFile(pidfile_path)
+    pidfile = PIDLockFile(pidfile_path(jobid))
 
     context = DaemonContext(
-        stdout=open(logfile_path, 'w+'),
-        stderr=open(logfile_path, 'w+', buffering=0),
+        stdout=open(logfile_path(jobid), 'w+'),
+        stderr=open(logfile_path(jobid), 'w+', buffering=0),
         pidfile=pidfile
     )
 
@@ -100,7 +129,7 @@ def main():
             log.setLevel(logging.INFO)
 
             # Load pylons environment from specified config file
-            load_environment(configfile_path)
+            _load_environment(configfile_path)
 
             # Run task, passing leftover arguments
             tasks.__dict__[task](*args)

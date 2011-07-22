@@ -158,12 +158,12 @@ class Loader(object):
         ``keys``
             A list of strings.
         '''
-        log.info('ensure index for "%s": "%s"...' %
+        log.debug('ensure index for "%s": "%s"...' %
                  (modelcls.collection_name, '/'.join(keys)))
         start = time.time()
         keys = [(key, ASCENDING) for key in keys]
         modelcls.c.ensure_index(keys)
-        log.info('done in %0.2fs' % (time.time() - start))
+        log.debug('done in %0.2fs' % (time.time() - start))
 
     def _extract_key_values(self, dict_, unique_keys):
         '''\
@@ -214,8 +214,8 @@ class Loader(object):
         '''
         start = time.time()
         index = {}
-        log.info('ensure unique items for %s (%s) ...' %
-                 (modelcls, '/'.join(keys)))
+        log.debug('ensure unique items for %s (%s) ...' %
+                  (modelcls, '/'.join(keys)))
 
         items = modelcls.find(query, fields=keys)
 
@@ -230,8 +230,8 @@ class Loader(object):
                 raise ValueError(msg)
             index[values] = item['_id']
 
-        log.info("... done. %s instances checked in %0.2fs" %
-                 (len(index), time.time() - start))
+        log.debug("... done. %s instances checked in %0.2fs" %
+                  (len(index), time.time() - start))
         return index
 
     def _add_changeobj(self, collection_name, _id, data, operation_type):
@@ -321,9 +321,9 @@ class Loader(object):
             now = time.time()
             timediff = now - self.start_time
             self.start_time = now
-            log.info("%s loaded %s in %0.2fs" % (self.dataset.name,
-                                                 self.num_entries,
-                                                timediff))
+            log.debug("%s loaded %s in %0.2fs" % (self.dataset.name,
+                                                  self.num_entries,
+                                                  timediff))
         return {'_id': entry['_id']}
 
     def create_entity(self, name=None, label=u'', description=u'',
@@ -566,8 +566,8 @@ class Loader(object):
 
         Returns: A :class:`openspending.lib.views.View` object.
         '''
-        log.info("pre-aggregating view %s on %r where %r",
-                 name, cls, view_filters)
+        log.debug("pre-aggregating view %s on %r where %r",
+                  name, cls, view_filters)
         view = View(self.dataset, name, label, dimension,
                     breakdown, cuts=view_filters)
         view.apply_to(cls, add_filters)
@@ -583,9 +583,9 @@ class Loader(object):
         using the loader. It will add additional, required data
         to the database.
         '''
-        log.info("updating distinct values...")
+        log.debug("updating distinct values...")
         update_distincts(self.dataset.name)
-        log.info("updating all cubes...")
+        log.debug("updating all cubes...")
         Cube.update_all_cubes(self.dataset)
 
     def flush_aggregates(self):

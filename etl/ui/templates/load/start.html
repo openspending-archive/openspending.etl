@@ -1,0 +1,20 @@
+<html xmlns:py="http://genshi.edgewall.org/"
+  xmlns:i18n="http://genshi.edgewall.org/i18n"
+  xmlns:xi="http://www.w3.org/2001/XInclude" py:strip="">
+
+  <py:def function="nav_class">nav-load</py:def>
+  <py:def function="page_title">Starting package load&hellip;</py:def>
+
+  <div py:def="content" class="content">
+    <h2>Starting package load&hellip;</h2>
+    <p>
+      <span class="error-message">Sorry, this package is already importing!</span>
+      It seems someone has already started an import for <strong>${c.pkg_name}</strong>.
+      Feel free to go and see the
+      <a href="${h.url(controller='load', action='status', package=c.pkg_name)}">
+        status of this import</a>.
+    </p>
+  </div>
+
+  <xi:include href="../layout.html" />
+</html>

@@ -1,0 +1,27 @@
+<html xmlns:py="http://genshi.edgewall.org/"
+  xmlns:i18n="http://genshi.edgewall.org/i18n"
+  xmlns:xi="http://www.w3.org/2001/XInclude" py:strip="">
+
+  <py:def function="nav_class">nav-load</py:def>
+  <py:def function="page_title">Package load status (${c.pkg_name})</py:def>
+
+  <div py:def="content" class="content">
+    <h2>Package load status (${c.pkg_name})</h2>
+    <div id="load-status">
+      <xi:include href="_status.html" />
+    </div>
+    <script type="text/javascript">
+    jQuery(function ($) {
+      var intervalId = setInterval(function () {
+        $('#load-status').load('${h.url(controller="load", action="status", package=c.pkg_name)}');
+
+        if ($('.load-complete').length) {
+          clearInterval(intervalId);
+        }
+      }, 1000);
+    });
+    </script>
+  </div>
+
+  <xi:include href="../layout.html" />
+</html>

@@ -7,7 +7,7 @@ from time import time
 from pylons.controllers import WSGIController
 from pylons.templating import literal, cached_template, pylons_globals
 from pylons import tmpl_context as c, request, config, app_globals, session
-from pylons.controllers.util import abort
+from pylons.controllers.util import abort, redirect
 from genshi.filters import HTMLFormFiller
 
 from openspending import model

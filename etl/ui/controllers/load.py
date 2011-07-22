@@ -1,12 +1,16 @@
+import subprocess
+
 from pylons.decorators.cache import beaker_cache
 
-from pylons import app_globals as g, tmpl_context as c
+from pylons import url, config, request, tmpl_context as c
 from pylons.i18n import _
 
 from openspending.lib import ckan
 from openspending.ui.lib import helpers as h
+from openspending.ui.lib.authz import requires
 
-from openspending.etl.ui.lib.base import BaseController, render
+from openspending.etl.command import daemon
+from openspending.etl.ui.lib.base import BaseController, render, redirect
 
 import logging
 log = logging.getLogger(__name__)
@@ -35,38 +39,41 @@ class LoadController(BaseController):
 
         return render('load/diagnose.html')
 
-    # @requires("admin")
-    # def load(self, package, resource, model):
-    #     max_errors = 25 # TODO: make this tunable
-    #
-    #     from openspending.etl.ui.lib.tasks import load_dataset
-    #     self._load_ckan(package, resource)
-    #     model = Model.by_id(model)
-    #
-    #     if model is None:
-    #         abort(404)
-    #
-    #     if g.use_celery:
-    #         result = load_dataset.delay(c.resource.get('url'), model,
-    #                                     max_errors=max_errors)
-    #
-    #         return redirect(url_for(controller="load",
-    #                                 action="task",
-    #                                 operation="load",
-    #                                 task_id=result.task_id))
-    #     else:
-    #         c.result = load_dataset(c.resource.get('url'), model,
-    #                                 max_errors=max_errors)
-    #         return render('load/started.html')
-    #
-    # def task(self, operation, task_id):
-    #     from openspending.etl.ui.lib.tasks import load_dataset
-    #     result = load_dataset.AsyncResult(task_id)
-    #
-    #     c.result = result
-    #     assert operation in ("store", "load")
-    #     c.operation = operation
-    #     return render('load/task.html')
+    @requires('admin')
+    def start(self, package):
+        jobid = _jobid_for_package(package)
+
+        if daemon.job_running(jobid):
+            c.pkg_name = package
+            return render('load/start.html')
+        else:
+            daemon.dispatch_job(
+                jobid=jobid,
+                config=config['__file__'],
+                task='ckan_import',
+                args=(package,)
+            )
+            return redirect(url(
+                controller='load',
+                action='status',
+                package=package
+            ))
+
+    def status(self, package):
+        jobid = _jobid_for_package(package)
+
+        c.load_running = daemon.job_running(jobid)
+        c.load_log = daemon.job_log(jobid)
+
+        c.pkg_name = package
+
+        if request.is_xhr:
+            return render('load/_status.html')
+        else:
+            return render('load/status.html')
+
+def _jobid_for_package(name):
+    return "import_%s" % name
 
 def _url_or_error_for_package(pkg, hint):
     try:

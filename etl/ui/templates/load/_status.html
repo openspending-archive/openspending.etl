@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html
+  xmlns="http://www.w3.org/1999/xhtml"
+  xmlns:i18n="http://genshi.edgewall.org/i18n"
+  xmlns:py="http://genshi.edgewall.org/"
+  xmlns:xi="http://www.w3.org/2001/XInclude"
+  >
+
+  <body>
+    <pre>${c.load_log}</pre>
+    <py:choose test="c.load_running">
+      <p class="load-running" py:when="True">
+        Loading&hellip;
+      </p>
+      <p class="load-complete" py:otherwise="">
+        This load has now completed!
+        <a href="${h.url(controller='home', action='index')}">Go home?</a>
+      </p>
+    </py:choose>
+  </body>
+</html>

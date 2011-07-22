@@ -1,5 +1,6 @@
 from openspending.lib import ckan
 from openspending.lib import json
+from openspending.etl.command import daemon
 from openspending.etl.ui.test import ControllerTestCase, url, helpers as h
 
 MOCK_REGISTRY = json.load(h.fixture_file('mock_ckan.json'))
@@ -58,3 +59,19 @@ class TestLoadController(ControllerTestCase):
 
         assert "multiple resources with hint &#39;model&#39;" in response, \
             "No warning about ambiguous resources in response!"
+
+    @h.patch('openspending.ui.lib.authz.have_role')
+    def test_start(self, have_role_mock):
+        have_role_mock.return_value = True # Pretend to be admin user.
+
+        response = self.app.get(url(controller='load',
+                                    action='start',
+                                    package='bar'))
+
+        # Redirects to status page
+        status_path = url(controller='load', action='status', package='bar')
+        assert response.headers['Location'].endswith(status_path), \
+            "LoadController start action didn't redirect to status page."
+
+        assert daemon.job_running('import_bar'), \
+            "LoadController start action didn't start the import_bar job!"
