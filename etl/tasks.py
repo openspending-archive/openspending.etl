@@ -1,19 +1,24 @@
 import logging
-
-from celery.task import task
+log = logging.getLogger(__name__)
 
 from openspending.lib import aggregator
+from openspending.lib.cubes import Cube
 
-from openspending.csvimport import load_dataset as csv_load_dataset
-from openspending.cubes import Cube
+from openspending.etl.csvimport import load_dataset as csv_load_dataset
 
-@task
+def noop():
+    pass
+
+def longrunner():
+    import time
+    for i in range(10):
+        log.info("%d", i)
+        time.sleep(1)
+
 def load_dataset(resource_url, model, **kwargs):
     out = csv_load_dataset(resource_url, model, **kwargs)
     return out
 
-
-@task
 def update_distincts(dataset_name):
     '''
     update the collection for all distinct values in the entries in
@@ -26,20 +31,18 @@ def update_distincts(dataset_name):
     Raises: :exc:`pymongo.errors.OperationFailure` if the dataset does
     not exist.
     '''
-    logging.debug("Compute distincts collection for dataset: %s"
-                  % dataset_name)
+    log.debug("Compute distincts collection for dataset: %s"
+              % dataset_name)
     aggregator.update_distincts(dataset_name)
 
 
-@task
 def update_all_cubes(dataset):
     Cube.update_all_cubes(dataset)
 
-
-@task
 def remove_entries(dataset_name):
     # NB: does not record changesets
     from openspending.etl.ui.model import Entry
-    logging.info("Deleting all entries in dataset: %s" % dataset_name)
+    log.info("Deleting all entries in dataset: %s" % dataset_name)
     errors = Entry.c.remove({"dataset.name": dataset_name})
-    logging.info("Errors: %s" % errors)
+    log.info("Errors: %s" % errors)
+

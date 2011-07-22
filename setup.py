@@ -10,7 +10,7 @@ setup(
     url='http://github.com/okfn/openspending.etl',
 
     install_requires=[
-        "celery-pylons==2.1.4dev",
+        "python-daemon==1.5.5",
         "openspending"
     ],
     setup_requires=[
@@ -41,6 +41,9 @@ setup(
             'mappingurl = openspending.etl.command:MappingUrlCommand',
             'importreport = openspending.etl.command:ImportReportCommand',
             'ckan = openspending.etl.command:CkanCommand'
+        ],
+        'console_scripts': [
+            'openspendingetld = openspending.etl.command.daemon:main'
         ]
     }
 )

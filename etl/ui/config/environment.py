@@ -86,8 +86,6 @@ def load_environment(global_conf, app_conf):
 
     init_mongo(config)
 
-    import celerypylons # side effect: set os.environ["CELERY_LOADER"] to Pylons Celery Loader
-
     # Configure ckan
     import openspending.lib.ckan as ckan
     ckan.configure(config)

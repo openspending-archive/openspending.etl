@@ -39,10 +39,6 @@ class Globals(object):
             'openspending.sandbox_mode',
             'False'
         ))
-        self.use_celery = _parse_bool(config.get(
-            'use_celery',
-            'False'
-        ))
 
 def _parse_bool(s):
     return s.lower() in ("yes", "true", "on", "t", "1")
