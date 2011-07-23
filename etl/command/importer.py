@@ -72,7 +72,7 @@ class CSVImportCommand(ImportCommand):
         super(CSVImportCommand, self).command()
         self._check_args_length(1)
 
-        from openspending.etl.csvimport import load_dataset
+        from openspending.etl.csv_import import load_dataset
         from openspending.lib import json
 
         def json_of_url(url):

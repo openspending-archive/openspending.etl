@@ -32,7 +32,7 @@ class MappingFieldsConstructor(object):
     '''
     Construct a mapping `dict` for a data
     :class:`openspending.etl.ui.lib.model.Model` to use with the
-    :class:`openspending.etl.ui.lib.csvimporter.DatasetImporter`.
+    :class:`openspending.etl.ui.lib.csv_importer.DatasetImporter`.
 
     It expects that you feed in dicts with :meth:`add`.
 

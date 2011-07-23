@@ -1,6 +1,6 @@
 from openspending.lib import ckan
 from openspending.model import Dataset
-from openspending.etl import csvimport
+from openspending.etl import csv_import
 
 class ResourceImportError(StandardError):
     pass
@@ -39,9 +39,9 @@ def load_from_ckan(package, resource):
     del ds['groups']
 
     ds = dict([ (str(k), v) for k, v in ds.iteritems() ])
-    dataset = csvimport.Dataset(**ds)
-    importer = csvimport.DatasetImporter(
-        csvimport.resource_lines(resource.get('url')),
+    dataset = csv_import.Dataset(**ds)
+    importer = csv_import.DatasetImporter(
+        csv_import.resource_lines(resource.get('url')),
         {
             'dataset': dataset,
             'mapping': {}

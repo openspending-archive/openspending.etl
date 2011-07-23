@@ -6,20 +6,20 @@ from openspending.lib import json
 from openspending.model import Dataset, Entry, default_mapping
 from openspending.etl.test import TestCase, DatabaseTestCase, helpers as h
 
-from openspending.etl.csvimport import DatasetImporter
+from openspending.etl.csv_import import DatasetImporter
 from openspending.etl.mappingimporter import MappingImporter
 
 def check_throws_one_error(self, importer):
     h.assert_equal(len(importer.errors), 1)
 
 def csv_fixture(name):
-    return h.fixture_file("csvimport/%s.csv" % name)
+    return h.fixture_file("csv_import/%s.csv" % name)
 
 def csv_fixture_mapping(name=None):
     if name is None:
         return default_mapping.copy()
 
-    f = h.fixture_file("csvimport/%s-model.json" % name)
+    f = h.fixture_file("csv_import/%s-model.json" % name)
     return json.load(f)
 
 def csv_fixture_model(dataset=None, name=None):
@@ -155,8 +155,8 @@ class TestCSVImportDatasets(TestCase):
             f.seek(0)
 
     def _test_dataset_dir(self, dir):
-        data_csv = h.fixture_file('csvimport/%s/data.csv' % dir)
-        mapping_json = h.fixture_file('csvimport/%s/mapping.json' % dir)
+        data_csv = h.fixture_file('csv_import/%s/data.csv' % dir)
+        mapping_json = h.fixture_file('csv_import/%s/mapping.json' % dir)
 
         dataset_name = unicode(dir)
 
@@ -178,8 +178,8 @@ class TestCSVImportDatasets(TestCase):
         # TODO: check correct dimensions
 
     def _test_mapping(self, dir):
-        mapping_csv = h.fixture_file('csvimport/%s/mapping.csv' % dir)
-        mapping_json = h.fixture_file('csvimport/%s/mapping.json' % dir)
+        mapping_csv = h.fixture_file('csv_import/%s/mapping.csv' % dir)
+        mapping_json = h.fixture_file('csv_import/%s/mapping.json' % dir)
 
         csv = mapping_csv.read()
         expected_mapping_data = json.load(mapping_json)
@@ -192,7 +192,7 @@ class TestCSVImportDatasets(TestCase):
     @property
     def testdata_dirs(self):
         from pkg_resources import resource_isdir as isdir, resource_listdir as listdir
-        base = 'test/fixtures/csvimport'
+        base = 'test/fixtures/csv_import'
         return filter(
             lambda e: isdir('openspending.etl', join(base, e)),
             listdir('openspending.etl', base)

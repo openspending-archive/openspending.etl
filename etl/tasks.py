@@ -10,9 +10,9 @@ def ckan_import(package_name):
     ckan_import(package, progress_callback=lambda x: log.info(x))
 
 def csv_import(resource_url, model, **kwargs):
-    from openspending.etl import csvimport
+    from openspending.etl import csv_import
 
-    out = csvimport.load_dataset(resource_url, model, **kwargs)
+    out = csv_import.load_dataset(resource_url, model, **kwargs)
     return out
 
 def remove_dataset(dataset_name):

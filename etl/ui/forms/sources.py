@@ -8,21 +8,22 @@ DIMENSION_TYPES = ['classifier', 'entity', 'value']
 
 
 def dataset_name(name):
-    if not len(name):
-        return u"Dataset name must not be empty!"
+    if not name:
+        return "Dataset name must not be empty!"
     if not re.match(r"[\w\-]*", name):
-        return (u"Dataset name must only include English "
-                "letters, numbers and underscores")
+        return ("Dataset name must only include English "
+                "letters, numbers and dashes")
     return True
 
 
 def currency_symbol(value):
     if value.upper() not in CURRENCY_SYMBOLS:
         error = (
-            u'"%s" is not a valid currency code. It needs to be 3 '
-            u'letters. See http://www.currency-iso.org/iso_index/'
-            u'iso_tables/iso_tables_a1.htm for a list of valid currency '
-            u'codes.') % value
+            '"%s" is not a valid currency code. It needs to be 3 '
+            'letters. See http://www.currency-iso.org/iso_index/'
+            'iso_tables/iso_tables_a1.htm for a list of valid currency '
+            'codes.'
+        ) % value
         return error
     return True
 

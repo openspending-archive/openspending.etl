@@ -96,11 +96,6 @@ class LineImportError(Exception):
     def __str__(self):
         return "Column `%s': %s" % (self.field, str(self.exc))
 
-
-def validate_model(model):
-    DatasetForm().deserialize(model.get('dataset'))
-    MappingForm().deserialize(model.get('mapping'))
-
 class DatasetImporter(object):
     def __init__(self, fileobj, model, source_file='<stream>'):
         self.fileobj = fileobj
@@ -141,7 +136,7 @@ class DatasetImporter(object):
             dataset = self.model.get('dataset').copy()
             time_axis = GRANULARITY.get(dataset.pop('temporal_granularity',
                                                     'year'))
-            unique_keys = dataset.pop('unique_keys', ['_csvimport_fp'])
+            unique_keys = dataset.pop('unique_keys', ['_csv_import_fp'])
             self._loader = Loader(
                 dataset.pop('name'),
                 unique_keys,
@@ -282,7 +277,7 @@ class DatasetImporter(object):
                     "line": line_number,
                     "timestamp": datetime.utcnow()
                     },
-                "_csvimport_fp": self.loader.dataset.name + ":" + \
+                "_csv_import_fp": self.loader.dataset.name + ":" + \
                     self.source_file + ":" + str(line_number)
                 }
 
