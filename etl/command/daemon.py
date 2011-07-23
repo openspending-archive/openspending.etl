@@ -125,7 +125,12 @@ def main():
         try:
             # Configure logger
             log = logging.getLogger('openspending.etl')
-            log.addHandler(logging.StreamHandler(sys.stderr))
+            handler = logging.StreamHandler(sys.stderr)
+            handler.setFormatter(logging.Formatter(
+                '%(asctime)s %(levelname)s: %(message)s',
+                '%Y-%m-%d %H:%M:%S'
+            ))
+            log.addHandler(handler)
             log.setLevel(logging.INFO)
 
             # Load pylons environment from specified config file
