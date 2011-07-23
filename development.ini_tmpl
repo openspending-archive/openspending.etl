@@ -45,7 +45,8 @@ openspending.sandbox_mode = true
 # openspending.forum_link =
 
 # Mongo
-openspending.mongodb.host = localhost
+# openspending.mongodb.host = localhost
+# openspending.mongodb.port = 27017
 openspending.mongodb.database = openspending_dev
 
 # Solr
