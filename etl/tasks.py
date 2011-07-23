@@ -7,7 +7,7 @@ def ckan_import(package_name):
     from openspending.etl.ckan_import import ckan_import
 
     package = ckan.Package(package_name)
-    ckan_import(package, progress_callback=lambda x: log.info(x))
+    ckan_import(package)
 
 def csv_import(resource_url, model, **kwargs):
     from openspending.etl import csv_import

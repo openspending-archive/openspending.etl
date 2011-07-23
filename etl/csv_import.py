@@ -7,7 +7,7 @@ import colander
 
 from openspending.lib import util
 from openspending.lib import unicode_dict_reader as udr
-from openspending.lib.solr_util import build_index, drop_index
+from openspending.lib import solr_util as solr
 from openspending.model import Dataset, Classifier, Entity
 from openspending.ui.lib.times import for_datestrings, EMPTY_DATE, GRANULARITY
 
@@ -31,10 +31,7 @@ DRY_RUN_LINES = 100
 def resource_lines(resource_url):
     return ilines(urlopen(resource_url))
 
-def load_dataset(resource_url, model,
-                 dry_run=False, do_index=True,
-                 progress_callback=lambda msg: None,
-                 **kwargs):
+def load_dataset(resource_url, model, dry_run=False, do_index=True, **kwargs):
     '''\
     Load a dataset given path to csv and model or model-like object.
 
@@ -45,27 +42,28 @@ def load_dataset(resource_url, model,
                                model,
                                source_file=resource_url)
     importer.validate_model()
-    progress_callback('Validated model OK')
+    log.info('Validated model OK')
 
     if dry_run:
-        progress_callback('Starting import of data')
-        importer.import_data(**kwargs)
-        progress_callback('Dry run of import OK')
+        log.info('Starting import of data')
+        importer.import_data(dry_run=dry_run, **kwargs)
+        log.info('Dry run of import OK')
     else:
         importer.describe_dimensions()
-        progress_callback('Described dimensions')
-        progress_callback('Starting import of data')
-        importer.import_data(**kwargs)
-        progress_callback('Completed import of data')
-        progress_callback('Now generating aggregates and views')
+        log.info('Described dimensions')
+        log.info('Starting import of data')
+        importer.import_data(dry_run=dry_run, **kwargs)
+        log.info('Completed import of data')
+        log.info('Now generating aggregates and views')
         importer.generate_views()
         # TODO: probably want this as separate
         if do_index:
-            drop_index(model['dataset'].get('name'))
-            build_index(model['dataset'].get('name'))
-            progress_callback('Building indexes')
+            solr.drop_index(model['dataset'].get('name'))
+            solr.build_index(model['dataset'].get('name'))
+            log.info('Building indexes')
         else:
-            progress_callback('Skipping indexes')
+            log.info('Skipping indexes')
+
     return True, importer.loader.dataset, importer.errors
 
 
@@ -169,8 +167,11 @@ class DatasetImporter(object):
             self.errors.append(e)
             return False
 
-    def import_data(self, dry_run=False, progress_callback=lambda x: None,
-                    max_errors=None, reraise_errors=False, max_lines=None):
+    def import_data(self,
+                    dry_run=False,
+                    max_errors=None,
+                    max_lines=None,
+                    reraise_errors=False):
 
         class TooManyErrors(Exception): pass
 
@@ -190,7 +191,7 @@ class DatasetImporter(object):
         # variables passed by ref
         def process_line(line_number, line):
             if line_number % 1000 == 999:
-                progress_callback('Lines imported so far: %s' %
+                log.info('Lines imported so far: %s' %
                                   line_number)
             try:
                 _line = validator.deserialize(line)

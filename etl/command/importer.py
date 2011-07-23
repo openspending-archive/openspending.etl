@@ -44,7 +44,6 @@ class ImportCommand(OpenSpendingETLCommand):
     def get_args(self):
         return {
             "dry_run": self.options.dry_run,
-            "progress_callback": lambda msg: print(msg, file=sys.stderr),
             "do_index": not self.options.no_index,
             "reraise_errors": self.options.raise_on_error,
             "max_lines": self.options.max_lines,
