@@ -41,38 +41,26 @@ class LoadController(BaseController):
 
     @requires('admin')
     def start(self, package):
-        jobid = _jobid_for_package(package)
+        job_id = _job_id_for_package(package)
 
-        if daemon.job_running(jobid):
+        if daemon.job_running(job_id):
             c.pkg_name = package
+            c.job_id = job_id
             return render('load/start.html')
         else:
             daemon.dispatch_job(
-                jobid=jobid,
+                job_id=job_id,
                 config=config['__file__'],
                 task='ckan_import',
                 args=(package,)
             )
             return redirect(url(
-                controller='load',
+                controller='job',
                 action='status',
-                package=package
+                job_id=job_id
             ))
 
-    def status(self, package):
-        jobid = _jobid_for_package(package)
-
-        c.load_running = daemon.job_running(jobid)
-        c.load_log = daemon.job_log(jobid)
-
-        c.pkg_name = package
-
-        if request.is_xhr:
-            return render('load/_status.html')
-        else:
-            return render('load/status.html')
-
-def _jobid_for_package(name):
+def _job_id_for_package(name):
     return "import_%s" % name
 
 def _url_or_error_for_package(pkg, hint):

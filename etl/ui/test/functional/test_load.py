@@ -69,7 +69,7 @@ class TestLoadController(ControllerTestCase):
                                     package='bar'))
 
         # Redirects to status page
-        status_path = url(controller='load', action='status', package='bar')
+        status_path = url(controller='job', action='status', job_id='import_bar')
         assert response.headers['Location'].endswith(status_path), \
             "LoadController start action didn't redirect to status page."
 

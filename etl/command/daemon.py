@@ -11,7 +11,7 @@ Before starting the job, the pylons app environment is loaded from a specified
 config file.
 
 At it's simplest, it is passed a unique job id (uniqueness is enforced using
-a unix pidfile in $PREFIX/var/run/openspendingetld_<jobid>.pid), a config file
+a unix pidfile in $PREFIX/var/run/openspendingetld_<job_id>.pid), a config file
 path, and a task to run. The task name is assumed to be a top-level function
 in the `openspending.etl.tasks` module.
 
@@ -24,7 +24,7 @@ Arguments can also be passed to the task:
 This process will return as soon as the job has daemonized.
 
 The daemonized job will write both STDOUT and STDERR to
-$PREFIX/var/log/openspendingetld_<jobid>.log
+$PREFIX/var/log/openspendingetld_<job_id>.log
 """
 
 from __future__ import absolute_import, print_function
@@ -53,58 +53,58 @@ class PIDLockFileZeroTimeout(PIDLockFile):
         kwargs.update({'timeout': 0})
         super(PIDLockFileZeroTimeout, self).acquire(*args, **kwargs)
 
-def logfile_path(jobid):
-    """Return path to log file for job <jobid>"""
-    return os.path.join(sys.prefix, 'var', 'log', 'openspendingetld_%s.log' % jobid)
+def logfile_path(job_id):
+    """Return path to log file for job <job_id>"""
+    return os.path.join(sys.prefix, 'var', 'log', 'openspendingetld_%s.log' % job_id)
 
-def pidfile_path(jobid):
-    """Return path to pid file for job <jobid>"""
-    return os.path.join(sys.prefix, 'var', 'run', 'openspendingetld_%s.pid' % jobid)
+def pidfile_path(job_id):
+    """Return path to pid file for job <job_id>"""
+    return os.path.join(sys.prefix, 'var', 'run', 'openspendingetld_%s.pid' % job_id)
 
-def job_running(jobid):
+def job_running(job_id):
     """\
-    Return True if job <jobid> is considered to be running by presence of pid
+    Return True if job <job_id> is considered to be running by presence of pid
     file.
     """
-    return PIDLockFile(pidfile_path(jobid)).is_locked()
+    return PIDLockFile(pidfile_path(job_id)).is_locked()
 
-def dispatch_job(jobid, config, task, args=None):
+def dispatch_job(job_id, config, task, args=None):
     """\
     Helper function to dispatch a job that will then daemonize.
     """
     if args is None:
         args = ()
 
-    cmd = ['openspendingetld', jobid, config, task]
+    cmd = ['openspendingetld', job_id, config, task]
     cmd.extend(args)
 
     return subprocess.check_output(cmd)
 
-def job_log(jobid):
-    """Return contents of log for job <jobid>"""
-    with open(logfile_path(jobid)) as f:
+def job_log(job_id):
+    """Return contents of log for job <job_id>"""
+    with open(logfile_path(job_id)) as f:
         return f.read()
 
 def main():
     args = sys.argv[1:]
 
     if not len(args) >= 3:
-        print("Usage: openspendingetld <jobid> <config_file> <task> [args, ...]" % args,
+        print("Usage: openspendingetld <job_id> <config_file> <task> [args, ...]" % args,
               file=sys.stderr)
         sys.exit(1)
 
-    # No two jobs with the same jobid can run at the same time
-    jobid = args.pop(0)
+    # No two jobs with the same job_id can run at the same time
+    job_id = args.pop(0)
     configfile_path = os.path.abspath(args.pop(0))
     task = args.pop(0)
 
     _create_directories()
 
-    pidfile = PIDLockFile(pidfile_path(jobid))
+    pidfile = PIDLockFile(pidfile_path(job_id))
 
     context = DaemonContext(
-        stdout=open(logfile_path(jobid), 'w+'),
-        stderr=open(logfile_path(jobid), 'w+', buffering=0),
+        stdout=open(logfile_path(job_id), 'w+'),
+        stderr=open(logfile_path(job_id), 'w+', buffering=0),
         pidfile=pidfile
     )
 
@@ -114,12 +114,12 @@ def main():
     #
     # The problem is that we want to provide immediate feedback to the
     # web front end, which calls this file as "openspendingetld", that it
-    # is trying to start a job with an already used jobid, without having
+    # is trying to start a job with an already used job_id, without having
     # to open another log file.
     #
     # This is unlikely to crop up in practice, but ideally we should FIXME.
     if pidfile.is_locked():
-        raise AlreadyLocked("Can't start two jobs with id '%s'!" % jobid)
+        raise AlreadyLocked("Can't start two jobs with id '%s'!" % job_id)
 
     with context:
         try:

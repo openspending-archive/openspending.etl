@@ -2,11 +2,6 @@ import sys
 import logging
 log = logging.getLogger(__name__)
 
-from openspending.lib import aggregator
-from openspending.lib.cubes import Cube
-
-from openspending.etl.csvimport import load_dataset as csv_load_dataset
-
 def ckan_import(package_name):
     from openspending.lib import ckan
     from openspending.etl.ckan_import import ckan_import
@@ -15,35 +10,38 @@ def ckan_import(package_name):
     ckan_import(package, progress_callback=lambda x: log.info(x))
 
 def csv_import(resource_url, model, **kwargs):
-    out = csv_load_dataset(resource_url, model, **kwargs)
+    from openspending.etl import csvimport
+
+    out = csvimport.load_dataset(resource_url, model, **kwargs)
     return out
 
-def update_distincts(dataset_name):
-    '''
-    update the collection for all distinct values in the entries in
-    a dataset *dataset_name*
+def remove_dataset(dataset_name):
+    log.warn("Dropping dataset '%s'", dataset_name)
 
-    ``dataset_name``
-        Name of a dataset
+    from openspending.model import mongo
+    db = mongo.db()
 
-    Returns: None
-    Raises: :exc:`pymongo.errors.OperationFailure` if the dataset does
-    not exist.
-    '''
-    log.debug("Compute distincts collection for dataset: %s"
-              % dataset_name)
-    aggregator.update_distincts(dataset_name)
+    log.info("Removing entries for dataset %s", dataset_name)
+    db.entry.remove({'dataset.name': dataset_name})
 
+    log.info("Removing dimensions for dataset %s", dataset_name)
+    db.dimension.remove({'dataset': dataset_name})
 
-def update_all_cubes(dataset):
-    Cube.update_all_cubes(dataset)
+    log.info("Removing distincts for dataset %s", dataset_name)
+    db['distincts__%s' % dataset_name].drop()
 
-def remove_entries(dataset_name):
-    # NB: does not record changesets
-    from openspending.etl.ui.model import Entry
-    log.info("Deleting all entries in dataset: %s" % dataset_name)
-    errors = Entry.c.remove({"dataset.name": dataset_name})
-    log.info("Errors: %s" % errors)
+    log.info("Removing cubes for dataset %s", dataset_name)
+    cubes = filter(lambda x: x.startswith('cubes.%s.' % dataset_name),
+                   db.collection_names())
+    for c in cubes:
+        db[c].drop()
+
+    log.info("Removing dataset object for dataset %s", dataset_name)
+    db.dataset.remove({'name': dataset_name})
+
+def drop_collections():
+    from openspending.model.mongo import drop_collections
+    drop_collections()
 
 # What follow are helper tasks for testing the etl.command.daemon module.
 

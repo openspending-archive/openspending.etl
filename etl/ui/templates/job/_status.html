@@ -7,13 +7,13 @@
   >
 
   <body>
-    <pre>${c.load_log}</pre>
-    <py:choose test="c.load_running">
-      <p class="load-running" py:when="True">
-        Loading&hellip;
+    <pre>${c.job_log}</pre>
+    <py:choose test="c.job_running">
+      <p class="job-running" py:when="True">
+        Job running&hellip;
       </p>
-      <p class="load-complete" py:otherwise="">
-        This load has now completed!
+      <p class="job-complete" py:otherwise="">
+        This job has now completed!
         <a href="${h.url(controller='home', action='index')}">Go home?</a>
       </p>
     </py:choose>

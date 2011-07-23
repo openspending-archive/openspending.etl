@@ -31,6 +31,7 @@ def make_map():
 
     map.connect('/load/diagnose/{package}', controller='load', action='diagnose')
     map.connect('/load/start/{package}', controller='load', action='start')
-    map.connect('/load/status/{package}', controller='load', action='status')
+
+    map.connect('/job/{job_id}', controller='job', action='status')
 
     return map

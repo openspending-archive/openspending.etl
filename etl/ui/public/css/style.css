@@ -362,7 +362,7 @@ form.basic input[type=submit]:active {
   background: transparent url(../img/spinner-overlay.gif) left center no-repeat;
 }
 
-#load-status .load-running {
+#job-status .job-running {
   padding-left: 40px;
   line-height: 36px;
   vertical-align: middle;

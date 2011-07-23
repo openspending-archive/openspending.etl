@@ -2,20 +2,20 @@
   xmlns:i18n="http://genshi.edgewall.org/i18n"
   xmlns:xi="http://www.w3.org/2001/XInclude" py:strip="">
 
-  <py:def function="nav_class">nav-load</py:def>
-  <py:def function="page_title">Package load status (${c.pkg_name})</py:def>
+  <py:def function="nav_class">nav-job</py:def>
+  <py:def function="page_title">Job status (${c.job_id})</py:def>
 
   <div py:def="content" class="content">
-    <h2>Package load status (${c.pkg_name})</h2>
-    <div id="load-status">
+    <h2>Job status (${c.job_id})</h2>
+    <div id="job-status">
       <xi:include href="_status.html" />
     </div>
     <script type="text/javascript">
     jQuery(function ($) {
       var intervalId = setInterval(function () {
-        $('#load-status').load('${h.url(controller="load", action="status", package=c.pkg_name)}');
+        $('#job-status').load('${h.url(controller="job", action="status", job_id=c.job_id)}');
 
-        if ($('.load-complete').length) {
+        if ($('.job-complete').length) {
           clearInterval(intervalId);
         }
       }, 1000);

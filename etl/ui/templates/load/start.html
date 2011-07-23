@@ -11,7 +11,7 @@
       <span class="error-message">Sorry, this package is already importing!</span>
       It seems someone has already started an import for <strong>${c.pkg_name}</strong>.
       Feel free to go and see the
-      <a href="${h.url(controller='load', action='status', package=c.pkg_name)}">
+      <a href="${h.url(controller='job', action='status', job_id=c.job_id)}">
         status of this import</a>.
     </p>
   </div>
