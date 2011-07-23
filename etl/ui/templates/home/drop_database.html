@@ -1,0 +1,19 @@
+<html xmlns:py="http://genshi.edgewall.org/"
+  xmlns:i18n="http://genshi.edgewall.org/i18n"
+  xmlns:xi="http://www.w3.org/2001/XInclude" py:strip="">
+
+  <py:def function="nav_class">nav-home</py:def>
+  <py:def function="page_title">Drop database</py:def>
+
+  <div py:def="content" class="content">
+    <h2>Database drop already running!</h2>
+    <p>
+      <span class="error-message">Sorry, a database drop is already in progress!</span>
+      It seems someone has already started a database drop.
+      Feel free to go and see its
+      <a href="${h.url(controller='job', action='status', job_id=c.job_id)}">status</a>.
+    </p>
+  </div>
+
+  <xi:include href="../layout.html" />
+</html>

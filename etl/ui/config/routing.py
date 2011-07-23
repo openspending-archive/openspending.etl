@@ -20,6 +20,8 @@ def make_map():
 
     map.connect('/', controller='home', action='index')
 
+    map.connect('/tasks/drop', controller='home', action='drop_database')
+
     map.connect('/login', controller='account', action='login')
     map.connect('/register', controller='account', action='register')
     map.connect('/settings', controller='account', action='settings')
