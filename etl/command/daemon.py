@@ -109,7 +109,7 @@ def main():
     )
 
     # NB: There *is* a possible race condition here, if a job with the same
-    # name is able to start between this job calling is_locked() above, and
+    # name is able to start between this job calling is_locked() below, and
     # acquiring the lock when daemonizing.
     #
     # The problem is that we want to provide immediate feedback to the
