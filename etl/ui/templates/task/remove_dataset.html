@@ -1,0 +1,45 @@
+<html xmlns:py="http://genshi.edgewall.org/"
+  xmlns:i18n="http://genshi.edgewall.org/i18n"
+  xmlns:xi="http://www.w3.org/2001/XInclude" py:strip="">
+
+  <py:def function="nav_class">nav-task</py:def>
+  <py:def function="page_title">Remove a dataset</py:def>
+
+  <div py:def="content" py:choose="c.datasets is not None" class="content">
+
+    <!--! Choose a dataset to remove -->
+    <div py:when="True" py:strip="">
+      <h2>Select a dataset to remove:</h2>
+      <p py:if="c.datasets.count() == 0">
+        No datasets are currently loaded into the database. Nothing more to do here&hellip;
+        <a href="${h.url(controller='home', action='index')}">Go home?</a>
+      </p>
+      <ul>
+        <li py:for="d in c.datasets">
+          <a class="confirm"
+             title="Are you sure you want to IRREVERSIBLY REMOVE the '${d.name}' dataset?"
+             href="${h.url(controller='task', action='remove_dataset', dataset=d.name)}">
+            ${d.label}
+          </a>
+        </li>
+      </ul>
+    </div>
+
+    <!--! We've got here because we're trying to remove a specified dataset,
+          but it's already in the process of being removed. -->
+    <div py:otherwise="" py:strip="">
+      <h2>Dataset removal already running for '${c.dataset_name}'!</h2>
+      <p>
+        <span class="error-message">
+          Sorry, this dataset is already in the
+          process of being removed!
+        </span>
+        It seems someone has already started a removal job for this dataset.
+        Feel free to go and see its
+        <a href="${h.url(controller='job', action='status', job_id=c.job_id)}">status</a>.
+      </p>
+    </div>
+  </div>
+
+  <xi:include href="../layout.html" />
+</html>

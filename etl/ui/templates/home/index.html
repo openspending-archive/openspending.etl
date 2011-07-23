@@ -17,11 +17,15 @@
       </li>
       <li>Generate an OpenSpending model for a dataset (Not Yet Implemented!)</li>
       <py:if test="g.sandbox_mode">
-      <li>Remove a package from the sandbox (Not Yet Implemented!)</li>
+      <li>
+        <a href="${h.url(controller='task', action='remove_dataset')}">
+          Remove a dataset from the sandbox
+        </a>
+      </li>
       <li>
         <a class="confirm"
            title="Are you sure you wish to IRREVERSIBLY REMOVE all data from the database?"
-           href="${h.url(controller='home', action='drop_database')}">
+           href="${h.url(controller='task', action='drop_database')}">
           Drop all data from the sandbox
         </a>
       </li>

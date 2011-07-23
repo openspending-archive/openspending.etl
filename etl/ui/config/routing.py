@@ -22,7 +22,9 @@ def make_map():
 
     map.connect('/', controller='home', action='index')
 
-    map.connect('/tasks/drop', controller='home', action='drop_database')
+    map.connect('/task/drop_database', controller='task', action='drop_database')
+    map.connect('/task/remove_dataset', controller='task', action='remove_dataset')
+    map.connect('/task/remove_dataset/{dataset}', controller='task', action='remove_dataset')
 
     map.connect('/login', controller='account', action='login')
     map.connect('/register', controller='account', action='register')
