@@ -2,11 +2,11 @@ import cgi
 
 from paste.urlparser import PkgResourcesParser
 from pylons import request, tmpl_context as c
-from pylons.controllers.util import forward, abort
+from pylons.controllers.util import forward
 from pylons.middleware import error_document_template
 from webhelpers.html.builder import literal
 
-from openspending.etl.ui.lib.base import BaseController, render
+from openspending.etl.ui.lib.base import BaseController, render, abort
 
 
 class ErrorController(BaseController):
