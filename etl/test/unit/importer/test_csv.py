@@ -6,7 +6,7 @@ from openspending.lib import json
 from openspending.model import Dataset, Entry, default_mapping
 from openspending.etl.test import TestCase, DatabaseTestCase, helpers as h
 
-from openspending.etl.csv_import import DatasetImporter
+from openspending.etl.importer import CSVImporter
 from openspending.etl.mappingimporter import MappingImporter
 
 def check_throws_one_error(self, importer):
@@ -37,30 +37,28 @@ def csv_fixture_model(dataset=None, name=None):
         'mapping': csv_fixture_mapping(name)
     }
 
-class TestCSVImport(DatabaseTestCase):
+class TestCSVImporter(DatabaseTestCase):
 
     def test_successful_import(self):
         data = csv_fixture('successful_import')
         model = csv_fixture_model()
-        importer = DatasetImporter(data, model)
-        importer.import_data()
+        importer = CSVImporter(data, model)
+        importer.run()
         dataset = Dataset.find_one()
         h.assert_true(dataset is not None, "Dataset should not be None")
-        h.assert_equal(dataset.name, "test-csv",
-                         "Dataset name should be correct")
+        h.assert_equal(dataset.name, "test-csv")
         entries = list(Entry.find({"dataset.name": dataset.name}))
         h.assert_equal(len(entries), 4)
         entry = Entry.find_one({"provenance.line": 2})
         h.assert_true(entry is not None,
-                        "Entry with name could not be found")
-        h.assert_equal(entry.amount, 130000.0,
-                         "Entry should have different amount")
+                      "Entry with name could not be found")
+        h.assert_equal(entry.amount, 130000.0)
 
     def test_successful_import_with_simple_testdata(self):
         data = csv_fixture('simple')
         model = csv_fixture_model(name='simple')
-        importer = DatasetImporter(data, model)
-        importer.import_data()
+        importer = CSVImporter(data, model)
+        importer.run()
         h.assert_equal(importer.errors, [])
 
         dataset = Dataset.find_one()
@@ -79,8 +77,8 @@ class TestCSVImport(DatabaseTestCase):
         data = csv_fixture('import_errors')
         model = csv_fixture_model()
 
-        importer = DatasetImporter(data, model)
-        importer.import_data(dry_run=True)
+        importer = CSVImporter(data, model)
+        importer.run(dry_run=True)
         h.assert_true(len(importer.errors) > 1, "Should have errors")
         h.assert_equal(importer.errors[0].line_number, 1,
                        "Should detect missing date colum in line 1")
@@ -88,20 +86,20 @@ class TestCSVImport(DatabaseTestCase):
     def test_empty_csv(self):
         empty_data = StringIO("")
         model = csv_fixture_model()
-        importer = DatasetImporter(empty_data, model)
-        importer.import_data(dry_run=True)
+        importer = CSVImporter(empty_data, model)
+        importer.run(dry_run=True)
 
         h.assert_equal(len(importer.errors), 2)
 
-        h.assert_equal(importer.errors[0].line_number, 1)
-        h.assert_equal(importer.errors[1].line_number, 1)
+        h.assert_equal(importer.errors[0].line_number, 0)
+        h.assert_equal(importer.errors[1].line_number, 0)
 
-        h.assert_true("Didn't read any lines of CSV input" in str(importer.errors[1].message))
+        h.assert_true("Didn't read any lines of data" in str(importer.errors[1].message))
 
     def _test_file_with_model(self, data_filename, model, checks):
         data = csv_fixture(data_filename)
-        importer = DatasetImporter(data, model)
-        importer.import_data(dry_run=True)
+        importer = CSVImporter(data, model)
+        importer.run(dry_run=True)
 
         for check in checks:
             check(self, importer)
@@ -112,36 +110,27 @@ class TestCSVImport(DatabaseTestCase):
 
         checks = [check_throws_one_error]
 
-        # It's unclear (to me) exactly what "check_malformed" was achieving.
-        # This dataset already throws a more useful error, so I've chopped it
-        # for now due to refactoring of UnicodeDictReader. Sorry if this causes
-        # problems.
-        #  -- nickstenning, July 12, 2011
-
         self._test_file_with_model(data_filename, model, checks)
 
     def test_erroneous_values(self):
         data = csv_fixture('erroneous_values')
         model = csv_fixture_model()
-        importer = DatasetImporter(data, model)
-        importer.import_data(dry_run=True)
+        importer = CSVImporter(data, model)
+        importer.run(dry_run=True)
         h.assert_equal(len(importer.errors), 1)
         h.assert_true("date" in importer.errors[0].message,
                       "Should find badly formatted date")
         h.assert_equal(importer.errors[0].line_number, 5)
 
     def test_error_with_empty_additional_date_column(self):
-        # We should be able to import empty dates.
         name = 'empty_additional_date_column'
         data = csv_fixture(name)
         model = csv_fixture_model(name=name)
-        importer = DatasetImporter(data, model)
-        importer.import_data()
-        h.assert_equal(
-            importer.errors, [],
-            'We are not able to import date cells without a value. See: '
-            'http://trac.openspending.org/ticket/170'
-        )
+        importer = CSVImporter(data, model)
+        importer.run()
+        # We are currently not able to import date cells without a value. See:
+        # http://trac.openspending.org/ticket/170
+        h.assert_equal(len(importer.errors), 1)
 
     def test_currency_sane(self):
         h.skip("Not yet implemented")
@@ -166,8 +155,8 @@ class TestCSVImportDatasets(TestCase):
 
         lines = self.count_lines_in_stream(data_csv) - 1
 
-        importer = DatasetImporter(data_csv, model)
-        importer.import_data(dry_run=False)
+        importer = CSVImporter(data_csv, model)
+        importer.run()
 
         assert len(importer.errors) == 0, "Import should not throw errors"
 
