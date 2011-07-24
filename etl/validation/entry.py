@@ -1,5 +1,6 @@
 import re
-import colander
+
+from .base import Mapping, Regex, SchemaNode, String, Invalid
 
 PLACEHOLDER = "(Empty)"
 
@@ -7,7 +8,7 @@ FLOAT_RE = re.compile(r"\-?\d[\d\,]*(\.[\d]*)?")
 DATE_RE = re.compile(r"^\d{4}(\-\d{1,2}(\-\d{1,2})?)?$")
 
 
-class StringOrPlaceholder(colander.String):
+class StringOrPlaceholder(String):
 
     def deserialize(self, node, cstruct):
         value = super(StringOrPlaceholder, self).deserialize(node, cstruct)
@@ -35,13 +36,13 @@ def make_date_validator(dimension, is_end):
             msg = ('"time" (here "%s") has to be %s. The "end_column", if specified, '
                    'might be empty') % (value, msg_suffix)
         if DATE_RE.match(value) is None:
-            raise colander.Invalid(node, msg)
+            raise Invalid(node, msg)
     return _validator
 
 
 def make_validator(fields):
     seen = []
-    schema = colander.SchemaNode(colander.Mapping(unknown='ignore'))
+    schema = SchemaNode(Mapping(unknown='ignore'))
     for field_ in fields:
         field = field_['field']
         datatype = field_['datatype']
@@ -54,20 +55,23 @@ def make_validator(fields):
             continue
         elif datatype == 'float':
             schema.add(
-                colander.SchemaNode(
-                    colander.String(),
+                SchemaNode(
+                    String(),
                     name=field,
                     missing="0.0",
-                    validator=colander.Regex(FLOAT_RE,
-                                             msg="Numeric format invalid")))
+                    validator=Regex(FLOAT_RE, msg="Numeric format invalid")
+                )
+            )
         elif datatype == 'date':
             schema.add(
-                colander.SchemaNode(
-                    colander.String(),
+                SchemaNode(
+                    String(),
                     name=field,
-                    validator=make_date_validator(dimension, is_end)))
+                    validator=make_date_validator(dimension, is_end)
+                )
+            )
         else:
-            schema.add(colander.SchemaNode(StringOrPlaceholder(),
-                                           name=field,
-                                           missing=PLACEHOLDER))
+            schema.add(SchemaNode(StringOrPlaceholder(),
+                                  name=field,
+                                  missing=PLACEHOLDER))
     return schema
