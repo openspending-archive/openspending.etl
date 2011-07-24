@@ -514,7 +514,7 @@ class Loader(object):
             A ``dict`` like object, e.g. an instance of
             :class:`openspending.model.Base`.
         ``classifier``
-            A :class:`wdmg.model.Classifier` object
+            A :class:`openspending.model.Classifier` object
         ``name``
             This is the key where the value of the classifier
             will be saved. This my be the same as classifier['name'].
@@ -532,7 +532,7 @@ class Loader(object):
             A ``dict`` like object, e.g. an instance of
             :class:`openspending.model.Base`.
         ``entity``
-            A :class:`wdmg.model.entity` object
+            A :class:`openspending.model.entity` object
         ``name``
             This is the key where the value of the entity
             will be saved.
