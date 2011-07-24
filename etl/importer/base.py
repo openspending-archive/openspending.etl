@@ -1,6 +1,5 @@
 import logging
 
-import colander
 from unidecode import unidecode
 
 from openspending.lib import solr_util as solr
@@ -8,6 +7,7 @@ from openspending.model import Dataset, Classifier, Entity
 
 from openspending.etl import times
 from openspending.etl.loader import Loader
+from openspending.etl.validation import Invalid
 from openspending.etl.validation.model import Model
 from openspending.etl.validation.entry import make_validator
 
@@ -43,7 +43,7 @@ class DataError(ImporterError):
         self.line_number = line_number
         self.source_file = source_file
 
-        if isinstance(exception, colander.Invalid):
+        if isinstance(exception, Invalid):
             msg = ["Validation error:"]
             for k, v in exception.asdict().iteritems():
                 msg.append("  - '%s' field had error '%s'" % (unidecode(k), unidecode(v)))
@@ -134,7 +134,7 @@ class BaseImporter(object):
         try:
             self.model = Model().deserialize(self.model)
             self.model_valid = True
-        except colander.Invalid as e:
+        except Invalid as e:
             raise ModelValidationError(e)
 
     def describe_dimensions(self):
@@ -207,7 +207,7 @@ class BaseImporter(object):
             _line = self.validator.deserialize(line)
             if not self.dry_run:
                 self.import_line(_line)
-        except (colander.Invalid, ImporterError) as e:
+        except (Invalid, ImporterError) as e:
             self.add_error(e)
 
     def import_line(self, line):
