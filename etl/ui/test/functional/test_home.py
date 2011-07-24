@@ -1,7 +1,7 @@
 from openspending.etl.ui.test import ControllerTestCase, url, helpers as h
 
 class TestHomeController(ControllerTestCase):
-    def test_index_load_dataset_link(self):
+    def test_index_csv_import_link(self):
         response = self.app.get(url(controller='home', action='index'))
 
         load_url = url(controller='load', action='index')
