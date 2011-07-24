@@ -2,7 +2,7 @@ import StringIO
 import urllib
 import urlparse
 
-from openspending.etl.ui.forms.sources import DATATYPE_NAMES, DIMENSION_TYPES
+from openspending.etl.validation.mapping import DATATYPE_NAMES, DIMENSION_TYPES
 from openspending.lib.unicode_dict_reader import UnicodeDictReader
 
 COMPLEX_TYPES = ['classifier', 'entity']
@@ -30,9 +30,8 @@ def concat(columns):
 
 class MappingFieldsConstructor(object):
     '''
-    Construct a mapping `dict` for a data
-    :class:`openspending.etl.ui.lib.model.Model` to use with the
-    :class:`openspending.etl.ui.lib.csv_importer.DatasetImporter`.
+    Construct a mapping `dict` for a JSON model to use with the
+    :class:`openspending.etl.importer.CSVImporter`.
 
     It expects that you feed in dicts with :meth:`add`.
 
