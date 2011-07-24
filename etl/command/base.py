@@ -10,7 +10,7 @@ from openspending.etl.ui.config.environment import load_environment
 # in command descriptions
 command.optparse.OptionParser.format_description = lambda self, d: self.description
 
-log = logging.getLogger('openspending.etl')
+log = logging.getLogger('openspending')
 
 class OpenSpendingETLCommand(command.Command):
     group_name = 'openspending.etl'
