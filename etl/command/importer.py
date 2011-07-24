@@ -1,9 +1,17 @@
 from __future__ import print_function
 
 import sys
+import logging
+import urllib2
 
+from openspending.lib import ckan
+from openspending.lib import json
+
+from openspending.etl import util
 from openspending.etl.command.base import OpenSpendingETLCommand
-from openspending.etl.ckan_import import ckan_import
+from openspending.etl.importer import CSVImporter, CKANImporter, ImporterError
+
+log = logging.getLogger(__name__)
 
 class ImportCommand(OpenSpendingETLCommand):
 
@@ -36,22 +44,17 @@ class ImportCommand(OpenSpendingETLCommand):
 
         return parser
 
-    def report_errors(self, errors):
-        print("There were %d errors:" % len(errors), file=sys.stderr)
-        for err in errors:
-            print("Line %s: %s" % (err.line_number, err.message), file=sys.stderr)
-
     def get_args(self):
         return {
             "dry_run": self.options.dry_run,
-            "do_index": not self.options.no_index,
-            "reraise_errors": self.options.raise_on_error,
+            "build_indices": not self.options.no_index,
+            "raise_errors": self.options.raise_on_error,
             "max_lines": self.options.max_lines,
             "max_errors": self.options.max_errors
         }
 
 class CSVImportCommand(ImportCommand):
-    summary = "Load a CSV dataset."
+    summary = "Load a CSV dataset"
     usage = "<dataset_url>"
     description = """\
                   You must specify one of --model OR (--mapping AND --metadata).
@@ -71,14 +74,8 @@ class CSVImportCommand(ImportCommand):
         super(CSVImportCommand, self).command()
         self._check_args_length(1)
 
-        from openspending.etl.csv_import import load_dataset
-        from openspending.lib import json
-
         def json_of_url(url):
-            import urllib2
             return json.load(urllib2.urlopen(url))
-
-        self._load_config()
 
         csv_data_url = self.args.pop(0)
 
@@ -99,14 +96,18 @@ class CSVImportCommand(ImportCommand):
             model["mapping"] = mi.import_from_url(self.options.mapping)
             model["dataset"] = json_of_url(self.options.metadata)
 
-        kwargs = self.get_args()
+        csv = util.urlopen_lines(csv_data_url)
+        importer = CSVImporter(csv, model, csv_data_url)
 
-        _, _, errors = load_dataset(csv_data_url, model, **kwargs)
-
-        self.report_errors(errors)
+        try:
+            importer.run(**self.get_args())
+            return 0
+        except ImporterError as e:
+            log.error(e)
+            return 1
 
 class CKANImportCommand(ImportCommand):
-    summary = "Load a dataset from CKAN."
+    summary = "Load a dataset from CKAN"
     usage = "<package_name>"
 
     parser = ImportCommand.standard_parser()
@@ -123,8 +124,6 @@ class CKANImportCommand(ImportCommand):
         super(CKANImportCommand, self).command()
         self._check_args_length(1)
 
-        from openspending.lib import ckan, json
-
         package = ckan.Package(self.args[0])
 
         if not self.options.use_ckan_tags:
@@ -135,20 +134,22 @@ class CKANImportCommand(ImportCommand):
                 print("You must specify the resource UUID (--resource)!", file=sys.stderr)
                 return 1
 
-        kwargs = self.get_args()
-
         if self.options.use_ckan_tags:
-            errors = ckan_import(package, **kwargs)
+            importer = CKANImporter(package)
         else:
-            errors = ckan_import(package,
-                                 self.options.mapping,
-                                 self.options.resource,
-                                 **kwargs)
+            importer = CKANImporter(package,
+                                    self.options.mapping,
+                                    self.options.resource)
 
-        self.report_errors(errors)
+        try:
+            importer.run(**self.get_args())
+            return 0
+        except ImporterError as e:
+            log.error(e)
+            return 1
 
 class ImportReportCommand(OpenSpendingETLCommand):
-    summary = "Report on errors from all known datasets."
+    summary = "Report on errors from all known datasets"
 
     parser = OpenSpendingETLCommand.standard_parser()
 
@@ -156,37 +157,34 @@ class ImportReportCommand(OpenSpendingETLCommand):
         super(ImportReportCommand, self).command()
         self._check_args_length(0)
 
-        from openspending.lib import ckan
-        from openspending.lib import json
-
-        self._load_config()
-
         print("-- Finding OpenSpending packages on CKAN...", file=sys.stderr)
 
         packages = [ p for p in ckan.openspending_packages() ]
         packages = filter(lambda x: x.is_importable(), packages)
 
         kwargs = {
-            'do_index': False,
+            'build_indices': False,
             'max_lines': 30,
             'max_errors': 1
         }
 
         def first_error(package):
+            importer = CKANImporter(package)
             try:
-                errors = ckan_import(package, **kwargs)
-            except Exception as e:
-                return str(e)
-
-            if len(errors) == 0:
-                return "No errors found"
-            else:
-                return "Line %d: %s" % (errors[0].line_number, errors[0].message)
+                importer.run(**kwargs)
+                # If we reach the next line, no errors have been thrown, as
+                # max_errors is set to 1.
+                return "No errors"
+            except ImporterError as e:
+                return e
 
         import_errors = {}
 
         for p in packages:
             print("-- Starting import of '%s'" % p.name, file=sys.stderr)
-            import_errors[p.name] =  first_error(p)
+            import_errors[p.name] = str(first_error(p))
 
-        print(json.dumps(import_errors, indent=2))
+        print("-- Results:", file=sys.stderr)
+        for name, err in import_errors.iteritems():
+            indented_err = "\n".join("  " +l for l in err.split("\n"))
+            print("%s:\n%s" % (name, indented_err), file=sys.stderr)

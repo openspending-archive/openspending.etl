@@ -1,7 +1,7 @@
 from openspending.etl.command.base import OpenSpendingETLCommand
 
 class MappingUrlCommand(OpenSpendingETLCommand):
-    summary = "Reveal the actual URL used for metadata."
+    summary = "Reveal the actual URL used for metadata"
     usage = "<mapping_url>"
 
     parser = OpenSpendingETLCommand.standard_parser()
