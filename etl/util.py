@@ -1,6 +1,9 @@
+from urllib import urlopen
+
+from openspending.lib.util import slugify
+
 # Created by Scott David Daniels on Wed, 23 Jun 2004, licensed under the PSF
 # http://code.activestate.com/recipes/286165-ilines-universal-newlines-from-any-data-source/
-
 def ilines(source_iterable):
     '''yield lines as in universal-newlines from a stream of data blocks'''
     tail = ''
@@ -62,3 +65,7 @@ def ilines(source_iterable):
             tail += block
     if tail:
         yield tail
+
+def urlopen_lines(url):
+    """Yield lines from a URL"""
+    return ilines(urlopen(url))
