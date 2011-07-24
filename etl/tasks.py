@@ -2,18 +2,25 @@ import sys
 import logging
 log = logging.getLogger(__name__)
 
-def ckan_import(package_name):
-    from openspending.lib import ckan
-    from openspending.etl.ckan_import import ckan_import
+def ckan_import(package_name, **kwargs):
+    from openspending.etl.importer import CKANImporter
 
-    package = ckan.Package(package_name)
-    ckan_import(package)
+    importer = CKANImporter(package_name)
+    importer.on_error = lambda e: log.warn(e)
 
-def csv_import(resource_url, model, **kwargs):
-    from openspending.etl import csv_import
+    importer.run(**kwargs)
 
-    out = csv_import.load_dataset(resource_url, model, **kwargs)
-    return out
+def csv_import(resource_url, model_url, **kwargs):
+    import urllib
+    from openspending.lib import json
+    from openspending.etl import util
+    from openspending.etl.importer import CSVImporter
+
+    model = json.load(urllib.urlopen(model_url))
+    csv = util.urlopen_lines(resource_url)
+    importer = CSVImporter(csv, model, resource_url)
+
+    importer.run(**kwargs)
 
 def remove_dataset(dataset_name):
     log.warn("Dropping dataset '%s'", dataset_name)
@@ -21,16 +28,16 @@ def remove_dataset(dataset_name):
     from openspending.model import mongo
     db = mongo.db()
 
-    log.info("Removing entries for dataset %s", dataset_name)
+    log.info("Removing entries")
     db.entry.remove({'dataset.name': dataset_name})
 
-    log.info("Removing dimensions for dataset %s", dataset_name)
+    log.info("Removing dimensions")
     db.dimension.remove({'dataset': dataset_name})
 
-    log.info("Removing distincts for dataset %s", dataset_name)
+    log.info("Removing distincts")
     db['distincts__%s' % dataset_name].drop()
 
-    log.info("Removing cubes for dataset %s", dataset_name)
+    log.info("Removing cubes")
     cubes = filter(lambda x: x.startswith('cubes.%s.' % dataset_name),
                    db.collection_names())
     for c in cubes:
@@ -49,6 +56,10 @@ def drop_collections():
 
 def test_noop():
     pass
+
+def test_sleep(seconds):
+    import time
+    time.sleep(int(seconds))
 
 def test_stdout():
     print "Text to standard out"
