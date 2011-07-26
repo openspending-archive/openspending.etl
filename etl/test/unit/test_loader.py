@@ -280,8 +280,3 @@ class TestLoader(LoaderTestCase):
     # Other stuff
 
     # Fixme: create_view tests.
-
-    def test_default_society(self):
-        loader = self._make_loader()
-        society = loader.get_default_society()
-        h.assert_true(isinstance(society, Entity))

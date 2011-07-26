@@ -399,17 +399,6 @@ class Loader(object):
 
         return cache[cache_key]
 
-    def get_default_society(self):
-        '''\
-        Get a default :class:`openspending.model.Entity` object that
-        represents the society (general public) to use across all
-        datasets. This can be called only one time.
-        '''
-        return self.create_entity(name=u'society',
-            label=u'Society (the General Public)',
-            description=(u'A dummy entity to be the recipient of '
-                         u'final government spending'))
-
     def get_classifier(self, name, taxonomy, _cache=None):
         '''\
         Get the classifier object with the name ``name`` for the taxonomy
