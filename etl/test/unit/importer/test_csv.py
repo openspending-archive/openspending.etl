@@ -4,7 +4,7 @@ from urlparse import urlunparse
 
 from openspending.lib import json
 from openspending.model import Dataset, Entry
-from openspending.etl.test import TestCase, DatabaseTestCase, helpers as h
+from openspending.etl.test import DatabaseTestCase, helpers as h
 
 from openspending.etl.importer import CSVImporter
 from openspending.etl.mappingimporter import MappingImporter
@@ -114,7 +114,7 @@ class TestCSVImporter(DatabaseTestCase):
     def test_currency_sane(self):
         h.skip("Not yet implemented")
 
-class TestCSVImportDatasets(TestCase):
+class TestCSVImportDatasets(DatabaseTestCase):
 
     datasets_to_test = ('lbhf', 'mexico', 'sample', 'uganda')
 

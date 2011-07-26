@@ -58,5 +58,12 @@
     "type": "value",
     "description": "Reference",
     "label": "Reference"
+  },
+  "id": {
+    "column": "id",
+    "datatype": "string",
+    "type": "value",
+    "description": "",
+    "label": "Unique transaction ID"
   }
 }
