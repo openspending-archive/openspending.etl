@@ -3,7 +3,7 @@ from StringIO import StringIO
 from urlparse import urlunparse
 
 from openspending.lib import json
-from openspending.model import Dataset, Entry, default_mapping
+from openspending.model import Dataset, Entry
 from openspending.etl.test import TestCase, DatabaseTestCase, helpers as h
 
 from openspending.etl.importer import CSVImporter
@@ -15,15 +15,12 @@ def check_throws_one_error(self, importer):
 def csv_fixture(name):
     return h.fixture_file("csv_import/%s.csv" % name)
 
-def csv_fixture_mapping(name=None):
-    if name is None:
-        return default_mapping.copy()
-
-    f = h.fixture_file("csv_import/%s-model.json" % name)
+def csv_fixture_mapping(name):
+    f = h.fixture_file("csv_import/%s-mapping.json" % name)
     return json.load(f)
 
-def csv_fixture_model(dataset=None, name=None):
-    if dataset is None:
+def csv_fixture_model(dataset=None, name='default'):
+    if not dataset:
         dataset = {
             "name": u"test-csv",
             'unique_keys': [],
