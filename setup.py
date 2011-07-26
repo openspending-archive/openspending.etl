@@ -1,5 +1,19 @@
+import os
+
 from setuptools import setup, find_packages
 from etl import __version__
+
+PKG_ROOT = '.packageroot'
+
+def files_in_pkgdir(pkg, dirname):
+    pkgdir = os.path.join(PKG_ROOT, *pkg.split('.'))
+    walkdir = os.path.join(pkgdir, dirname)
+    walkfiles = []
+    for dirpath, _, files in os.walk(walkdir):
+        fpaths = (os.path.relpath(os.path.join(dirpath, f), pkgdir)
+                  for f in files)
+        walkfiles += fpaths
+    return walkfiles
 
 setup(
     name='openspending.etl',
@@ -17,9 +31,18 @@ setup(
         "PasteScript==1.7.3"
     ],
 
-    packages=find_packages('.packageroot'),
-    package_dir={'': '.packageroot'},
+    packages=find_packages(PKG_ROOT),
+    package_dir={'': PKG_ROOT},
     namespace_packages = ['openspending'],
+    package_data={
+        'openspending.etl': [
+            'validation/currencies.xml'
+        ],
+        'openspending.etl.ui': (
+            files_in_pkgdir('openspending.etl.ui', 'public') +
+            files_in_pkgdir('openspending.etl.ui', 'templates')
+        )
+    },
 
     test_suite='nose.collector',
 
