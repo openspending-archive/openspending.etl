@@ -14,6 +14,8 @@ from openspending.model import Changeset, ChangeObject, Classifier
 from openspending.model import Dataset, Dimension, Entry, Entity
 from openspending.ui.lib.views import View
 
+from openspending.etl import util
+
 log = logging.getLogger(__name__)
 
 CREATE = ChangeObject.OperationType.CREATE
@@ -132,7 +134,7 @@ class Loader(object):
         # caches
         self.entity_cache = {}
         self.classifier_cache = {}
-        self.unique_keys = unique_keys
+        self.unique_keys = sorted(unique_keys)
 
         # We need indexes to speed up lookups and updates
         self.ensure_index(Entry, ['dataset._id'])
@@ -319,8 +321,8 @@ class Loader(object):
             Entry.c.update(upsert_query, {"$set": entry}, upsert=True)
             entry['_id'] = existing_entry_id
         else:
-            # with maniulate=True the new '_id' will be added to the document.
-            Entry.c.insert(entry, manipulate=True)
+            entry['_id'] = util.hash_values(entry_cache_key)
+            Entry.c.insert(entry)
 
         # Add a ChangeObject for this change
         operation_type = (existing_entry_id is None) and CREATE or UPDATE

@@ -36,6 +36,10 @@ class TestLoader(LoaderTestCase):
     def test_loader_raises_if_no_unique_keys(self):
         self._make_loader(unique_keys=[])
 
+    def test_loader_sorts_unique_keys(self):
+        ldr = self._make_loader(unique_keys=['c', 'a', 'b', 'z'])
+        h.assert_equal(ldr.unique_keys, ['a', 'b', 'c', 'z'])
+
     def test_loader_creates_indexes(self):
         db = mongo.db()
         db.create_collection('entry')
@@ -72,8 +76,13 @@ class TestLoader(LoaderTestCase):
         entry = self._make_entry(loader)
         h.assert_true(isinstance(entry, Entry))
 
+    def test_create_entry_id_from_unique_keys(self):
+        loader = self._make_loader(unique_keys=['a', 'b', 'c'])
+        entry = self._make_entry(loader, a="foo", b="bar", c="baz")
+
+        h.assert_equal(entry.id, '976cbe6da83475797cbb55f3fc50bf174b138a60')
+
     def test_create_entry_returns_query_spec(self):
-        from bson import ObjectId
         loader = self._make_loader()
         entry = {'name': 'one',
                  'amount': 1000.00,
@@ -83,7 +92,6 @@ class TestLoader(LoaderTestCase):
                  'second': u'second',
                  'extra': u'extra'}
         query_spec = loader.create_entry(**entry)
-        h.assert_true(isinstance(query_spec['_id'], ObjectId))
         fetched_entry = Entry.find_one(query_spec)
         h.assert_equal(fetched_entry['name'], 'one')
 
