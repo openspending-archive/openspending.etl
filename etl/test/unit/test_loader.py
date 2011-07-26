@@ -1,9 +1,9 @@
-
 from bson.dbref import DBRef
 
 from openspending.model import (Changeset, ChangeObject, Classifier, Dataset,
                                 Entry, Entity, mongo)
 
+from openspending.etl import loader
 from openspending.etl.test import LoaderTestCase, helpers as h
 
 test_data = {
@@ -25,6 +25,16 @@ class TestLoader(LoaderTestCase):
         h.assert_true(isinstance(loader.dataset, Dataset))
         h.assert_equal(loader.dataset.name, u'test_dataset')
         h.assert_equal(loader.num_entries, 0)
+
+    @h.raises(loader.LoaderSetupError)
+    def test_loader_raises_if_multiple_datasets(self):
+        Dataset(name="foo").save()
+        Dataset(name="foo").save()
+        self._make_loader(dataset_name="foo")
+
+    @h.raises(loader.LoaderSetupError)
+    def test_loader_raises_if_no_unique_keys(self):
+        self._make_loader(unique_keys=[])
 
     def test_loader_creates_indexes(self):
         db = mongo.db()

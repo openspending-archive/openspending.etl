@@ -19,6 +19,11 @@ log = logging.getLogger(__name__)
 CREATE = ChangeObject.OperationType.CREATE
 UPDATE = ChangeObject.OperationType.UPDATE
 
+class LoaderError(Exception):
+    pass
+
+class LoaderSetupError(LoaderError):
+    pass
 
 class Loader(object):
     '''\
@@ -47,7 +52,8 @@ class Loader(object):
             For example if you have a entries with payments that have
             are identifiable by a *department* and a *consecutive number*
             that is unique within the *department*, you would pass in
-            a list with the keys ``['department', 'consecutive_number']``.
+            a list with the keys ``['department', 'consecutive_number']``. All
+            datasets must have a non-empty list of ``unique_keys``.
         ``label``
             A label for the dataset that can be presented to the user
         ``description``
@@ -72,17 +78,19 @@ class Loader(object):
             you can retrive the changeset with *.changeset*.
 
         Raises:
-            ``AssertionError`` if more than one dataset with the name
-                ``dataset_name`` exists already.
+            ``LoaderSetupError`` if more than one dataset with the name
+                ``dataset_name`` exists already, or if no ``unique_keys`` are
+                provided.
             ``ValueError``
                 If and duplicated :class:`openspending.model.Entry` object
                 is found (The entry has the same values for the
                 ``unique_keys``) or two :class:`model.class.Entity`
                 objects are found with the same name.
         '''
-        assert isinstance(dataset_name, unicode)
-        assert isinstance(unique_keys, list)
         check_rest_suffix(dataset_name)
+
+        if not len(unique_keys) > 0:
+            raise LoaderSetupError("Must provide a non-empty set of unique keys!")
 
         # create a changeset:
         if changeset is None:
@@ -105,7 +113,10 @@ class Loader(object):
         elif dataset_count == 1:
             operation = UPDATE
         else:
-            raise AssertionError("Ambiguous dataset name: %s" % dataset_name)
+            raise LoaderSetupError(
+                "Ambiguous dataset: %d datasets called '%s' in the db!" %
+                (dataset_count, dataset_name)
+            )
         data = {"label": label,
                 "currency": currency.upper(),
                 "description": description,
