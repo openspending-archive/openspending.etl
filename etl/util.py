@@ -1,3 +1,4 @@
+from hashlib import sha1
 from urllib import urlopen
 
 from openspending.lib.util import slugify
@@ -69,3 +70,7 @@ def ilines(source_iterable):
 def urlopen_lines(url):
     """Yield lines from a URL"""
     return ilines(urlopen(url))
+
+def hash_values(iterable):
+    """Return a cryptographic hash of an iterable."""
+    return sha1(''.join(sha1(val).hexdigest() for val in iterable)).hexdigest()

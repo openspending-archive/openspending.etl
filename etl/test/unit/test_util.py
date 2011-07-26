@@ -3,15 +3,16 @@ from StringIO import StringIO
 from openspending.etl.test import TestCase, helpers as h
 from openspending.etl import util
 
-DATA_FP = StringIO("line one\nline two\r\nline three")
+@h.patch('openspending.etl.util.urlopen')
+def test_urlopen_lines(urlopen_mock):
+    urlopen_mock.return_value = StringIO("line one\nline two\r\nline three")
 
-class TestUtil(TestCase):
+    lines = [line for line in util.urlopen_lines("http://none")]
 
-    @h.patch('openspending.etl.util.urlopen')
-    def test_urlopen_lines(self, urlopen_mock):
-        urlopen_mock.return_value = DATA_FP
+    h.assert_equal(lines,
+                   ["line one\n", "line two\n", "line three"])
 
-        lines = [line for line in util.urlopen_lines("http://none")]
+def test_hash():
+    h.assert_equal(util.hash_values(["foo", "bar", "baz"]),
+                   '976cbe6da83475797cbb55f3fc50bf174b138a60')
 
-        h.assert_equal(lines,
-                       ["line one\n", "line two\n", "line three"])
