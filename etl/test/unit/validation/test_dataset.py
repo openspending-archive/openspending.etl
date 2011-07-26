@@ -10,7 +10,8 @@ class TestDataset(TestCase):
             'name': 'Required',
             'label': 'Required',
             'description': 'Required',
-            'currency': 'Required'
+            'currency': 'Required',
+            'unique_keys': 'Required'
         })
 
     def test_name_badcharacters(self):
@@ -34,11 +35,19 @@ class TestDataset(TestCase):
             "'currency' not in validation errors!"
         )
 
+    def test_unique_keys_length(self):
+        errs = validation_errors(Dataset, '{"unique_keys": []}')
+        h.assert_true(
+            "at least one" in errs.get('unique_keys'),
+            "'at least one' not in validation errors!"
+        )
+
     def test_valid(self):
         # This will raise if any errors are found.
         Dataset().deserialize({
             "name": "valid-name_for-dataset123",
             "label": "Dataset label",
             "description": "Some description",
-            "currency": "CAD"
+            "currency": "CAD",
+            "unique_keys": ['one']
         })
