@@ -10,16 +10,12 @@ from openspending.lib.util import check_rest_suffix, deep_get
 from openspending.logic.classifier import create_classifier, get_classifier
 from openspending.logic.entry import classify_entry, entitify_entry
 from openspending.logic.dimension import create_dimension
-from openspending.model import Changeset, ChangeObject, Classifier
-from openspending.model import Dataset, Dimension, Entry, Entity
+from openspending.model import Classifier, Dataset, Dimension, Entry, Entity
 from openspending.ui.lib.views import View
 
 from openspending.etl import util
 
 log = logging.getLogger(__name__)
-
-CREATE = ChangeObject.OperationType.CREATE
-UPDATE = ChangeObject.OperationType.UPDATE
 
 class LoaderError(Exception):
     pass
@@ -328,12 +324,6 @@ class Loader(object):
             query = {}
             for key in match_keys:
                 query[key] = entity[key]
-            entity_obj = Entity.find_one(query)
-
-            if entity_obj is None:
-                operation = CREATE
-            else:
-                operation = UPDATE
 
             Entity.c.update(query, {"$set": entity}, upsert=True)
             new_entity = Entity.find_one(query)
@@ -401,13 +391,10 @@ class Loader(object):
             _cache = self.classifier_cache
         if not (name, taxonomy) in _cache:
             existing = self.get_classifier(name, taxonomy, _cache=_cache)
-            if existing is None:
-                operation = UPDATE
-            else:
-                operation = CREATE
             classifier = create_classifier(name, taxonomy, label,
                                            description, **classifier)
             _cache[(name, taxonomy)] = classifier
+
         return _cache[(name, taxonomy)]
 
     def create_dimension(self, key, label, description, **kwargs):
