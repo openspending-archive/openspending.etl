@@ -321,7 +321,9 @@ class Loader(object):
             Entry.c.update(upsert_query, {"$set": entry}, upsert=True)
             entry['_id'] = existing_entry_id
         else:
-            entry['_id'] = util.hash_values(entry_cache_key)
+            uniques = [self.dataset.name]
+            uniques.extend(entry_cache_key)
+            entry['_id'] = util.hash_values(uniques)
             Entry.c.insert(entry)
 
         # Add a ChangeObject for this change

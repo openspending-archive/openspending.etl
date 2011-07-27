@@ -4,6 +4,7 @@ from openspending.model import (Changeset, ChangeObject, Classifier, Dataset,
                                 Entry, Entity, mongo)
 
 from openspending.etl import loader
+from openspending.etl import util
 from openspending.etl.test import LoaderTestCase, helpers as h
 
 test_data = {
@@ -58,16 +59,12 @@ class TestLoader(LoaderTestCase):
         second_entry = Entry(name=u'Test Entry',
                              dataset=loader.dataset.to_ref_dict())
         second_entry.save()
-        h.assert_raises(ValueError, self._make_loader,
-                          unique_keys=['name'])
+        h.assert_raises(ValueError, self._make_loader, unique_keys=['name'])
 
     def test_loader_checks_duplicate_entities(self):
-        entity = Entity(name=u'Test Entity')
-        entity.save()
-        duplicate = Entity(name=u'Test Entity')
-        duplicate.save()
-        h.assert_raises(ValueError, self._make_loader,
-                          unique_keys=['name'])
+        Entity(name=u'Test Entity').save()
+        Entity(name=u'Test Entity').save()
+        h.assert_raises(ValueError, self._make_loader, unique_keys=['name'])
 
     # Create Entries
 
@@ -77,10 +74,11 @@ class TestLoader(LoaderTestCase):
         h.assert_true(isinstance(entry, Entry))
 
     def test_create_entry_id_from_unique_keys(self):
-        loader = self._make_loader(unique_keys=['a', 'b', 'c'])
+        loader = self._make_loader(dataset_name="monkeys",
+                                   unique_keys=['a', 'b', 'c'])
         entry = self._make_entry(loader, a="foo", b="bar", c="baz")
 
-        h.assert_equal(entry.id, '976cbe6da83475797cbb55f3fc50bf174b138a60')
+        h.assert_equal(entry.id, util.hash_values(['monkeys', 'foo', 'bar', 'baz']))
 
     def test_create_entry_returns_query_spec(self):
         loader = self._make_loader()
