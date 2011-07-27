@@ -4,7 +4,6 @@
     "datatype": "string",
     "type": "value",
     "description": "Limited coverage",
-    "default_value": "",
     "label": "Project Type"
   },
   "source_table": {
@@ -12,7 +11,6 @@
     "datatype": "string",
     "type": "value",
     "description": "Source Table for this data",
-    "default_value": "",
     "label": "Source Table"
   },
   "donorref": {
@@ -20,7 +18,6 @@
     "datatype": "string",
     "type": "value",
     "description": "Donor's project reference number",
-    "default_value": "",
     "label": "Donor project  number"
   },
   "sector_objective": {
@@ -28,8 +25,6 @@
       {
         "column": "Sector Objective",
         "datatype": "string",
-        "constant": "",
-        "default_value": "",
         "name": "label"
       }
     ],
@@ -51,7 +46,6 @@
     "datatype": "string",
     "type": "value",
     "description": "Sub-unit of Agency\u00a0",
-    "default_value": "",
     "label": "Agency Details"
   },
   "spending_source_type_id": {
@@ -59,8 +53,6 @@
       {
         "column": "spending_source_type_id",
         "datatype": "string",
-        "constant": "",
-        "default_value": "",
         "name": "label"
       }
     ],
@@ -73,7 +65,6 @@
     "datatype": "string",
     "type": "value",
     "description": "Limited coverage",
-    "default_value": "",
     "label": "Aid Modality"
   },
   "aid_programme_code": {
@@ -81,7 +72,6 @@
     "datatype": "string",
     "type": "value",
     "description": "Aid only",
-    "default_value": "",
     "label": "Aid Programme Code"
   },
   "donor_coa_code": {
@@ -89,7 +79,6 @@
     "datatype": "string",
     "type": "value",
     "description": "Uganda Chart of Accounts code for donor",
-    "default_value": "",
     "label": "COA Code of Donor"
   },
   "peap_area": {
@@ -97,7 +86,6 @@
     "datatype": "string",
     "type": "value",
     "description": "Poverty Eradication Action Plan",
-    "default_value": "",
     "label": "PEAP Area"
   },
   "from": {
@@ -105,8 +93,6 @@
       {
         "column": "spending_source",
         "datatype": "string",
-        "constant": "",
-        "default_value": "",
         "name": "label"
       }
     ],
@@ -119,8 +105,6 @@
       {
         "column": "spending_source_type_label",
         "datatype": "string",
-        "constant": "",
-        "default_value": "",
         "name": "label"
       }
     ],
@@ -133,7 +117,6 @@
     "datatype": "string",
     "type": "value",
     "description": "Whether the spending is a commitment (planned) or a disbursement (outturn)",
-    "default_value": "",
     "label": "Spending Type"
   },
   "aid_programme_name": {
@@ -141,7 +124,6 @@
     "datatype": "string",
     "type": "value",
     "description": "Aid only",
-    "default_value": "",
     "label": "Aid Programme Name"
   },
   "swg": {
@@ -149,8 +131,6 @@
       {
         "column": "SWG",
         "datatype": "string",
-        "constant": "",
-        "default_value": "",
         "name": "label"
       }
     ],
@@ -164,7 +144,6 @@
     "datatype": "string",
     "type": "value",
     "description": "GoU Project Code\u00a0",
-    "default_value": "",
     "label": "Project Code"
   },
   "to": {
@@ -172,7 +151,6 @@
       {
         "column": "recipient",
         "datatype": "string",
-        "constant": "",
         "default_value": "Society Uganda",
         "name": "label"
       }
@@ -186,7 +164,6 @@
     "datatype": "string",
     "type": "value",
     "description": "GoU Budget Vote Name (where known)\u00a0",
-    "default_value": "",
     "label": "Vote Name"
   },
   "bs_offset": {
@@ -194,7 +171,6 @@
     "datatype": "string",
     "type": "value",
     "description": "",
-    "default_value": "",
     "label": "Budget Support offset"
   },
   "amount_donor": {
@@ -202,7 +178,6 @@
     "datatype": "float",
     "type": "value",
     "description": "Amount committed or disbursed in this year in the donor currency (if available)",
-    "default_value": "",
     "label": "Donor Amount"
   },
   "programme_code": {
@@ -210,7 +185,6 @@
     "datatype": "string",
     "type": "value",
     "description": "Recurrent spending only\u00a0",
-    "default_value": "",
     "label": "Programme Code"
   },
   "sector_strategy_policy": {
@@ -218,7 +192,6 @@
     "datatype": "string",
     "type": "value",
     "description": "Limited coverage",
-    "default_value": "",
     "label": "Sector Strategy or Policy"
   },
   "amount_dollars": {
@@ -226,7 +199,6 @@
     "datatype": "float",
     "type": "value",
     "description": "Amount committed or disbursed in this year in US Dollars",
-    "default_value": "",
     "label": "Dollar Amount"
   },
   "peap_pillar": {
@@ -234,7 +206,6 @@
     "datatype": "string",
     "type": "value",
     "description": "Poverty Eradication Action Plan",
-    "default_value": "",
     "label": "PEAP Pillar"
   },
   "project_name": {
@@ -242,7 +213,6 @@
     "datatype": "string",
     "type": "value",
     "description": "GoU Project Name\u00a0",
-    "default_value": "",
     "label": "Project Name"
   },
   "financecomment": {
@@ -250,7 +220,6 @@
     "datatype": "string",
     "type": "value",
     "description": "A 1 denotes that this entry is a value created to offset budget support from Government of Uganda spending. This is necessary to avoid double-counting when showing aggregations (of Government of Uganda spending, budget support and project aid) at higher levels, but it does not affect the actual amounts in the projects. Budget Support is money given directly to the government which they can spend on their own priorities. General Budget Support is given directly to the Treasury or Finance Ministry, and Sector Budget Support is given to an individual sector. Because of the nature of budget support, it is impossible to accurately track it through the system down to an individual project level. Below the higher levels, budget support thus becomes part of Government of Uganda revenues.",
-    "default_value": "",
     "label": "Financial comments"
   },
   "grant_loan": {
@@ -258,7 +227,6 @@
     "datatype": "string",
     "type": "value",
     "description": "Limited coverage",
-    "default_value": "",
     "label": "Grant or Loan"
   },
   "donorcurrency": {
@@ -266,7 +234,6 @@
     "datatype": "currency",
     "type": "value",
     "description": "Currency in which Donor Amount was provided in (if any)",
-    "default_value": "",
     "label": "Donor's currency"
   },
   "programme_name": {
@@ -274,7 +241,6 @@
     "datatype": "string",
     "type": "value",
     "description": "Recurrent Spending only",
-    "default_value": "",
     "label": "Programme Name"
   },
   "donor_name": {
@@ -282,7 +248,6 @@
     "datatype": "string",
     "type": "value",
     "description": "",
-    "default_value": "",
     "label": "Donor Name"
   },
   "on_off_budget": {
@@ -290,7 +255,6 @@
     "datatype": "string",
     "type": "value",
     "description": "Limited coverage",
-    "default_value": "",
     "label": "On or Off Budget"
   },
   "mtef_sector": {
@@ -298,7 +262,6 @@
     "datatype": "string",
     "type": "value",
     "description": "Medium Term Expenditure Framework Sector",
-    "default_value": "",
     "label": "MTEF Sector"
   },
   "from_id": {
@@ -306,8 +269,6 @@
       {
         "column": "spending_source_id",
         "datatype": "string",
-        "constant": "",
-        "default_value": "",
         "name": "label"
       }
     ],
@@ -320,7 +281,6 @@
     "datatype": "string",
     "type": "value",
     "description": "Limited coverage",
-    "default_value": "",
     "label": "Sector Strategy or Policy Details"
   },
   "agency_name": {
@@ -328,7 +288,6 @@
     "datatype": "string",
     "type": "value",
     "description": "Relevant Agency",
-    "default_value": "",
     "label": "Agency Name"
   },
   "mtef_reference": {
@@ -336,7 +295,6 @@
     "datatype": "string",
     "type": "value",
     "description": "Medium Term Expenditure Framework Reference",
-    "default_value": "",
     "label": "MTEF Reference"
   },
   "amount": {
@@ -344,7 +302,6 @@
     "datatype": "float",
     "type": "value",
     "description": "Amount committed or disbursed in this year in Ugandan Shillings.",
-    "default_value": "",
     "label": "Amount"
   },
   "gou_vote_code": {
@@ -352,7 +309,6 @@
     "datatype": "string",
     "type": "value",
     "description": "GoU Budget Vote Code\u00a0",
-    "default_value": "",
     "label": "Vote Code"
   },
   "time": {
@@ -360,7 +316,6 @@
     "datatype": "date",
     "type": "value",
     "description": "",
-    "default_value": "",
     "label": "Financial year"
   },
   "source_id": {
@@ -368,7 +323,6 @@
     "datatype": "string",
     "type": "value",
     "description": "ID from the source table",
-    "default_value": "",
     "label": "Source ID"
   },
   "peap_objective": {
@@ -376,7 +330,13 @@
     "datatype": "string",
     "type": "value",
     "description": "Poverty Eradication Action Plan",
-    "default_value": "",
     "label": "PEAP Objective"
+  },
+  "id": {
+    "column": "id",
+    "datatype": "string",
+    "type": "value",
+    "label": "Transaction ID",
+    "description": ""
   }
 }

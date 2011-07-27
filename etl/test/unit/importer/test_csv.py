@@ -4,41 +4,38 @@ from urlparse import urlunparse
 
 from openspending.lib import json
 from openspending.model import Dataset, Entry
-from openspending.etl.test import TestCase, DatabaseTestCase, helpers as h
+from openspending.etl.test import DatabaseTestCase, helpers as h
 
 from openspending.etl.importer import CSVImporter
 from openspending.etl.mappingimporter import MappingImporter
 
-def check_throws_one_error(self, importer):
-    h.assert_equal(len(importer.errors), 1)
+def csvimport_fixture_file(name, path):
+    try:
+        fp = h.fixture_file('csv_import/%s/%s' % (name, path))
+    except IOError:
+        if name == 'default':
+            fp = None
+        else:
+            fp = csvimport_fixture_file('default', path)
 
-def csv_fixture(name):
-    return h.fixture_file("csv_import/%s.csv" % name)
+    return fp
 
-def csv_fixture_mapping(name):
-    f = h.fixture_file("csv_import/%s-mapping.json" % name)
-    return json.load(f)
+def csvimport_fixture(name):
+    data_fp = csvimport_fixture_file(name, 'data.csv')
+    model_fp = csvimport_fixture_file(name, 'model.json')
+    mapping_fp = csvimport_fixture_file(name, 'mapping.json')
 
-def csv_fixture_model(dataset=None, name='default'):
-    if not dataset:
-        dataset = {
-            "name": u"test-csv",
-            'unique_keys': [],
-            "label": u"Label for Test CSV Import",
-            "description": u"Description for Test CSV Import",
-            "currency": "EUR"
-        }
+    model = json.load(model_fp)
 
-    return {
-        'dataset': dataset,
-        'mapping': csv_fixture_mapping(name)
-    }
+    if mapping_fp:
+        model['mapping'] = json.load(mapping_fp)
+
+    return data_fp, model
 
 class TestCSVImporter(DatabaseTestCase):
 
     def test_successful_import(self):
-        data = csv_fixture('successful_import')
-        model = csv_fixture_model()
+        data, model = csvimport_fixture('successful_import')
         importer = CSVImporter(data, model)
         importer.run()
         dataset = Dataset.find_one()
@@ -52,8 +49,7 @@ class TestCSVImporter(DatabaseTestCase):
         h.assert_equal(entry.amount, 130000.0)
 
     def test_successful_import_with_simple_testdata(self):
-        data = csv_fixture('simple')
-        model = csv_fixture_model(name='simple')
+        data, model = csvimport_fixture('simple')
         importer = CSVImporter(data, model)
         importer.run()
         h.assert_equal(importer.errors, [])
@@ -71,8 +67,7 @@ class TestCSVImporter(DatabaseTestCase):
         h.assert_equal(entry['amount'], 100.00)
 
     def test_import_errors(self):
-        data = csv_fixture('import_errors')
-        model = csv_fixture_model()
+        data, model = csvimport_fixture('import_errors')
 
         importer = CSVImporter(data, model)
         importer.run(dry_run=True)
@@ -82,7 +77,7 @@ class TestCSVImporter(DatabaseTestCase):
 
     def test_empty_csv(self):
         empty_data = StringIO("")
-        model = csv_fixture_model()
+        _, model = csvimport_fixture('default')
         importer = CSVImporter(empty_data, model)
         importer.run(dry_run=True)
 
@@ -93,25 +88,14 @@ class TestCSVImporter(DatabaseTestCase):
 
         h.assert_true("Didn't read any lines of data" in str(importer.errors[1].message))
 
-    def _test_file_with_model(self, data_filename, model, checks):
-        data = csv_fixture(data_filename)
+    def test_malformed_csv(self):
+        data, model = csvimport_fixture('malformed')
         importer = CSVImporter(data, model)
         importer.run(dry_run=True)
-
-        for check in checks:
-            check(self, importer)
-
-    def test_malformed_csv(self):
-        data_filename = 'malformed_csv'
-        model = csv_fixture_model()
-
-        checks = [check_throws_one_error]
-
-        self._test_file_with_model(data_filename, model, checks)
+        h.assert_equal(len(importer.errors), 1)
 
     def test_erroneous_values(self):
-        data = csv_fixture('erroneous_values')
-        model = csv_fixture_model()
+        data, model = csvimport_fixture('erroneous_values')
         importer = CSVImporter(data, model)
         importer.run(dry_run=True)
         h.assert_equal(len(importer.errors), 1)
@@ -119,10 +103,8 @@ class TestCSVImporter(DatabaseTestCase):
                       "Should find badly formatted date")
         h.assert_equal(importer.errors[0].line_number, 5)
 
-    def test_error_with_empty_additional_date_column(self):
-        name = 'empty_additional_date_column'
-        data = csv_fixture(name)
-        model = csv_fixture_model(name=name)
+    def test_error_with_empty_additional_date(self):
+        data, model = csvimport_fixture('empty_additional_date')
         importer = CSVImporter(data, model)
         importer.run()
         # We are currently not able to import date cells without a value. See:
@@ -132,7 +114,9 @@ class TestCSVImporter(DatabaseTestCase):
     def test_currency_sane(self):
         h.skip("Not yet implemented")
 
-class TestCSVImportDatasets(TestCase):
+class TestCSVImportDatasets(DatabaseTestCase):
+
+    datasets_to_test = ('lbhf', 'mexico', 'sample', 'uganda')
 
     def count_lines_in_stream(self, f):
         try:
@@ -140,65 +124,45 @@ class TestCSVImportDatasets(TestCase):
         finally:
             f.seek(0)
 
-    def _test_dataset_dir(self, dir):
-        data_csv = h.fixture_file('csv_import/%s/data.csv' % dir)
-        mapping_json = h.fixture_file('csv_import/%s/mapping.json' % dir)
+    def _test_import(self, name):
+        data, model = csvimport_fixture(name)
+        lines = self.count_lines_in_stream(data) - 1 # -1 for header row
 
-        dataset_name = unicode(dir)
-
-        model = csv_fixture_model()
-        model['mapping'] = json.load(mapping_json)
-        model['dataset']['name'] = dataset_name
-
-        lines = self.count_lines_in_stream(data_csv) - 1
-
-        importer = CSVImporter(data_csv, model)
+        importer = CSVImporter(data, model)
         importer.run()
 
-        assert len(importer.errors) == 0, "Import should not throw errors"
+        h.assert_equal(len(importer.errors), 0)
 
         # check correct number of entries
-        entries = Entry.find({"dataset.name": dataset_name})
-        assert entries.count() == lines
+        entries = Entry.find({"dataset.name": model['dataset']['name']})
+        h.assert_equal(entries.count(), lines)
 
-        # TODO: check correct dimensions
+    def _test_mapping(self, name):
+        mapping_csv = csvimport_fixture_file(name, 'mapping.csv').read()
+        mapping_json = csvimport_fixture_file(name, 'mapping.json').read()
 
-    def _test_mapping(self, dir):
-        mapping_csv = h.fixture_file('csv_import/%s/mapping.csv' % dir)
-        mapping_json = h.fixture_file('csv_import/%s/mapping.json' % dir)
-
-        csv = mapping_csv.read()
-        expected_mapping_data = json.load(mapping_json)
+        expected_mapping = json.loads(mapping_json)
 
         importer = MappingImporter()
-        observed_mapping_data = importer.import_from_string(csv)
+        observed_mapping = importer.import_from_string(mapping_csv)
 
-        assert observed_mapping_data == expected_mapping_data
-
-    @property
-    def testdata_dirs(self):
-        from pkg_resources import resource_isdir as isdir, resource_listdir as listdir
-        base = 'test/fixtures/csv_import'
-        return filter(
-            lambda e: isdir('openspending.etl', join(base, e)),
-            listdir('openspending.etl', base)
-        )
+        h.assert_equal(observed_mapping, expected_mapping)
 
     def test_all_mappings(self):
-        for dir in self.testdata_dirs:
+        for dir in self.datasets_to_test:
             yield self._test_mapping, dir
 
     def test_all_imports(self):
-        for dir in self.testdata_dirs:
-            yield self._test_dataset_dir, dir
+        for dir in self.datasets_to_test:
+            yield self._test_import, dir
 
 
 class TestMappingImporter(DatabaseTestCase):
 
     def test_empty_mapping(self):
-        data = csv_fixture('simple-mapping').read()
+        mapping_csv = csvimport_fixture_file('simple', 'mapping.csv').read()
         importer = MappingImporter()
-        mapping = importer.import_from_string(data)
+        mapping = importer.import_from_string(mapping_csv)
         h.assert_equal(sorted(mapping.keys()),
                          [u'amount', u'currency', u'from', u'time', u'to'])
         h.assert_equal(mapping['amount'],
@@ -218,7 +182,6 @@ class TestMappingImporter(DatabaseTestCase):
         h.assert_equal(mapping['from'],
                          {'description': u'z',
                           'fields': [{'column': u'paid_by',
-                                      'constant': '',
                                       'datatype': u'string',
                                       'default_value': u'x',
                                       'name': 'label'}],
@@ -227,7 +190,6 @@ class TestMappingImporter(DatabaseTestCase):
         h.assert_equal(mapping['to'],
                          {'description': u'z',
                           'fields': [{'column': u'paid_to',
-                                      'constant': '',
                                       'datatype': u'string',
                                       'default_value': u'x',
                                       'name': 'label'}],
@@ -257,9 +219,9 @@ class TestMappingImporter(DatabaseTestCase):
         raise AssertionError('Missing Exception')
 
     def test_nested_classifier_columns(self):
-        data = csv_fixture('nested-mapping').read()
+        mapping_csv = csvimport_fixture_file('nested', 'mapping.csv').read()
         importer = MappingImporter()
-        mapping = importer.import_from_string(data)
+        mapping = importer.import_from_string(mapping_csv)
         to_fields = mapping['to']['fields']
         h.assert_equal(len(to_fields), 2)
         h.assert_equal(to_fields[0]['column'], u'paid_to')
@@ -269,9 +231,9 @@ class TestMappingImporter(DatabaseTestCase):
 
     def test_line_in_error(self):
         importer = MappingImporter()
-        data = csv_fixture('wrong-objecttype-mapping').read()
+        mapping_csv = csvimport_fixture_file('wrong_object_type', 'mapping.csv').read()
         try:
-            importer.import_from_string(data)
+            importer.import_from_string(mapping_csv)
         except ValueError, E:
             errors = E.args[0]
             h.assert_equal(len(errors), 1)
@@ -281,9 +243,9 @@ class TestMappingImporter(DatabaseTestCase):
 
     def test_wrong_objecttype(self):
         importer = MappingImporter()
-        data = csv_fixture('wrong-objecttype-mapping').read()
+        mapping_csv = csvimport_fixture_file('wrong_object_type', 'mapping.csv').read()
         try:
-            importer.import_from_string(data)
+            importer.import_from_string(mapping_csv)
         except ValueError, E:
             errors = E.args[0]
             h.assert_equal(len(errors), 1)

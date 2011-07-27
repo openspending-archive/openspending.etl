@@ -26,5 +26,10 @@
             {"name": "name", "constant": "society", "datatype": "constant"},
             {"name": "label", "constant": "Society", "datatype": "constant"}
         ]
+    },
+    "id": {
+        "type": "value",
+        "column": "id",
+        "datatype": "string"
     }
 }

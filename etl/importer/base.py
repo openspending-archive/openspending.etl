@@ -211,7 +211,7 @@ class BaseImporter(object):
             self.add_error(e)
 
     def import_line(self, line):
-        raise NotImplementedError("load_line not implemented in BaseImporter")
+        raise NotImplementedError("import_line not implemented in BaseImporter")
 
     def add_error(self, exception):
         err = DataError(exception=exception,

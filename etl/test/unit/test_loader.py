@@ -1,9 +1,9 @@
-
 from bson.dbref import DBRef
 
-from openspending.model import (Changeset, ChangeObject, Classifier, Dataset,
-                                Entry, Entity, mongo)
+from openspending.model import Classifier, Dataset, Entry, Entity, mongo
 
+from openspending.etl import loader
+from openspending.etl import util
 from openspending.etl.test import LoaderTestCase, helpers as h
 
 test_data = {
@@ -13,7 +13,6 @@ test_data = {
     (u'green', u'flowery'): 30.0,
     (u'green', u'pungent'): 30.0,
 }
-
 
 class TestLoader(LoaderTestCase):
 
@@ -26,6 +25,14 @@ class TestLoader(LoaderTestCase):
         h.assert_equal(loader.dataset.name, u'test_dataset')
         h.assert_equal(loader.num_entries, 0)
 
+    @h.raises(loader.LoaderSetupError)
+    def test_loader_raises_if_no_unique_keys(self):
+        self._make_loader(unique_keys=[])
+
+    def test_loader_sorts_unique_keys(self):
+        ldr = self._make_loader(unique_keys=['c', 'a', 'b', 'z'])
+        h.assert_equal(ldr.unique_keys, ['a', 'b', 'c', 'z'])
+
     def test_loader_creates_indexes(self):
         db = mongo.db()
         db.create_collection('entry')
@@ -37,23 +44,33 @@ class TestLoader(LoaderTestCase):
         h.assert_equal(self._get_index_num(Entry), 9)
         h.assert_equal(self._get_index_num(Entity), 2)
 
+    @h.raises(mongo.errors.DuplicateKeyError)
     def test_loader_checks_duplicate_entries(self):
-        loader = self._make_loader(unique_keys=['name'])
-        self._make_entry(loader, name=u'Test Entry')
+        d = Dataset(name='foo').save()
+        Entry(name='Test Entry', dataset=d).save()
+        Entry(name='Test Entry', dataset=d).save()
 
-        second_entry = Entry(name=u'Test Entry',
-                             dataset=loader.dataset.to_ref_dict())
-        second_entry.save()
-        h.assert_raises(ValueError, self._make_loader,
-                          unique_keys=['name'])
+        self._make_loader(unique_keys=['name'])
 
+    @h.raises(mongo.errors.DuplicateKeyError)
     def test_loader_checks_duplicate_entities(self):
-        entity = Entity(name=u'Test Entity')
-        entity.save()
-        duplicate = Entity(name=u'Test Entity')
-        duplicate.save()
-        h.assert_raises(ValueError, self._make_loader,
-                          unique_keys=['name'])
+        Entity(name=u'Test Entity').save()
+        Entity(name=u'Test Entity').save()
+
+        self._make_loader(unique_keys=['name'])
+
+    def test_loader_creates_dataset(self):
+        self._make_loader(dataset_name="foo")
+
+        h.assert_true(
+            Dataset.find_one({'name': 'foo'}),
+            "Loader didn't create new dataset!"
+        )
+
+    def test_loader_uses_extant_dataset(self):
+        Dataset(name="foo", id=123).save()
+        ldr = self._make_loader(dataset_name="foo")
+        h.assert_equal(ldr.dataset.id, 123)
 
     # Create Entries
 
@@ -62,8 +79,14 @@ class TestLoader(LoaderTestCase):
         entry = self._make_entry(loader)
         h.assert_true(isinstance(entry, Entry))
 
+    def test_create_entry_id_from_unique_keys(self):
+        loader = self._make_loader(dataset_name="monkeys",
+                                   unique_keys=['ka', 'kb', 'kc'])
+        entry = self._make_entry(loader, ka="foo", kb="bar", kc="baz")
+
+        h.assert_equal(entry.id, util.hash_values(['monkeys', 'foo', 'bar', 'baz']))
+
     def test_create_entry_returns_query_spec(self):
-        from bson import ObjectId
         loader = self._make_loader()
         entry = {'name': 'one',
                  'amount': 1000.00,
@@ -73,7 +96,6 @@ class TestLoader(LoaderTestCase):
                  'second': u'second',
                  'extra': u'extra'}
         query_spec = loader.create_entry(**entry)
-        h.assert_true(isinstance(query_spec['_id'], ObjectId))
         fetched_entry = Entry.find_one(query_spec)
         h.assert_equal(fetched_entry['name'], 'one')
 
@@ -137,6 +159,35 @@ class TestLoader(LoaderTestCase):
                           **entry(miss='first'))
         h.assert_raises(KeyError, loader.create_entry,
                           **entry(miss='second'))
+
+    def test_entries_different_unique_keys(self):
+        loader = self._make_loader(dataset_name='test', unique_keys=['id'])
+        e1 = self._make_entry(loader, id='123', name='foo')
+        e2 = self._make_entry(loader, id='456', name='bar')
+
+        res = Entry.find({'dataset.name': 'test'})
+        h.assert_equal(res.count(), 2)
+
+    def test_entries_same_unique_keys(self):
+        loader = self._make_loader(dataset_name='test', unique_keys=['id'])
+        self._make_entry(loader, id='123', name='foo')
+        self._make_entry(loader, id='123', name='bar')
+
+        res = Entry.find({'dataset.name': 'test'})
+        h.assert_equal(res.count(), 1)
+        h.assert_equal(res.next().name, 'bar')
+
+    def test_loads_are_idempotent(self):
+        loader1 = self._make_loader(dataset_name='test', unique_keys=['id'])
+        self._make_entry(loader1, id='123', name='foo')
+        self._make_entry(loader1, id='456', name='bar')
+        loader2 = self._make_loader(dataset_name='test', unique_keys=['id'])
+        self._make_entry(loader2, id='123', name='foo')
+        self._make_entry(loader2, id='456', name='bar')
+        self._make_entry(loader2, id='789', name='baz')
+
+        res = Entry.find({'dataset.name': 'test'})
+        h.assert_equal(res.count(), 3)
 
     # Create Entities
 
@@ -237,51 +288,6 @@ class TestLoader(LoaderTestCase):
         h.assert_equal(entry['reason']['taxonomy'], c_taxonomy)
         h.assert_true(isinstance(entry['reason']['ref'], DBRef))
 
-    # Changeset / Revisioning support
-
-    def test_loader_creates_changeset(self):
-        self._make_loader()
-        h.assert_equal(Changeset.c.find().count(), 1)
-
-    def _find_changeobject(self, collection, _id):
-        return ChangeObject.find_one({'object_id': [collection, _id]})
-
-    def test_loader_creates_changeobject_for_entry(self):
-        loader = self._make_loader()
-        entry = self._make_entry(loader, name=u'revisioned_testentry')
-        changeobj = self._find_changeobject('entry', entry.id)
-        h.assert_equal(changeobj['changeset']['_id'], loader.changeset.id)
-        h.assert_equal(changeobj['data']['name'], entry['name'])
-
-    def test_loader_creates_changeobject_for_entities(self):
-        loader = self._make_loader()
-        entity = loader.create_entity(u'Test Entity')
-        changeobj = self._find_changeobject('entity', entity.id)
-        h.assert_equal(changeobj['changeset']['_id'],
-                         loader.changeset.id)
-        h.assert_equal(changeobj['data']['name'], entity['name'])
-
-    def test_loader_creates_changeobject_for_classifiers(self):
-        loader = self._make_loader()
-        classifier = loader.create_classifier(u'testclassifier',
-                                              u'testtaxonomy')
-        changeobj = self._find_changeobject('classifier', classifier.id)
-        h.assert_equal(changeobj['changeset']['_id'],
-                         loader.changeset.id)
-        h.assert_equal(changeobj['data']['name'], classifier['name'])
-
-    def test_loader_creates_changeobject_for_dataset(self):
-        loader = self._make_loader()
-        changeobj = self._find_changeobject('dataset', loader.dataset.id)
-        h.assert_equal(changeobj['changeset']['_id'],
-                         loader.changeset.id)
-        h.assert_equal(changeobj['data']['name'], loader.dataset['name'])
-
     # Other stuff
 
     # Fixme: create_view tests.
-
-    def test_default_society(self):
-        loader = self._make_loader()
-        society = loader.get_default_society()
-        h.assert_true(isinstance(society, Entity))

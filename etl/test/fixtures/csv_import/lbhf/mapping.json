@@ -1,11 +1,9 @@
-{
+{ 
   "from": {
     "fields": [
       {
         "column": "paid_by",
         "datatype": "string",
-        "constant": "",
-        "default_value": "",
         "name": "label"
       }
     ],
@@ -17,8 +15,8 @@
     "column": "currency",
     "datatype": "string",
     "type": "value",
-    "description": "Currency",
     "default_value": "GBP",
+    "description": "Currency",
     "label": "Currency"
   },
   "spendingarea": {
@@ -26,7 +24,6 @@
     "datatype": "string",
     "type": "value",
     "description": "Spending Area",
-    "default_value": "",
     "label": "Spending Area"
   },
   "to": {
@@ -34,8 +31,6 @@
       {
         "column": "paid_to",
         "datatype": "string",
-        "constant": "",
-        "default_value": "",
         "name": "label"
       }
     ],
@@ -48,7 +43,6 @@
     "datatype": "float",
     "type": "value",
     "description": "Amount",
-    "default_value": "",
     "label": "Amount"
   },
   "time": {
@@ -56,7 +50,6 @@
     "datatype": "date",
     "type": "value",
     "description": "Date",
-    "default_value": "",
     "label": "Date"
   },
   "transactionid": {
@@ -64,7 +57,13 @@
     "datatype": "string",
     "type": "value",
     "description": "Reference",
-    "default_value": "",
     "label": "Reference"
+  },
+  "id": {
+    "column": "id",
+    "datatype": "string",
+    "type": "value",
+    "description": "",
+    "label": "Unique transaction ID"
   }
 }
