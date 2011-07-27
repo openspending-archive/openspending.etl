@@ -177,6 +177,18 @@ class TestLoader(LoaderTestCase):
         h.assert_equal(res.count(), 1)
         h.assert_equal(res.next().name, 'bar')
 
+    def test_loads_are_idempotent(self):
+        loader1 = self._make_loader(dataset_name='test', unique_keys=['id'])
+        self._make_entry(loader1, id='123', name='foo')
+        self._make_entry(loader1, id='456', name='bar')
+        loader2 = self._make_loader(dataset_name='test', unique_keys=['id'])
+        self._make_entry(loader2, id='123', name='foo')
+        self._make_entry(loader2, id='456', name='bar')
+        self._make_entry(loader2, id='789', name='baz')
+
+        res = Entry.find({'dataset.name': 'test'})
+        h.assert_equal(res.count(), 3)
+
     # Create Entities
 
     def test_create_entity(self):
