@@ -28,17 +28,17 @@ class LoaderSetupError(LoaderError):
     pass
 
 class Loader(object):
-    '''\
+    """\
     A helper class that provides all methods required to save the data from a
     dataset into Open Spending in an efficient way.
 
     Read the :doc:`loaders.rst <../loaders>` in the /doc folder.
-    '''
+    """
 
     def __init__(self, dataset_name, unique_keys, label, description=u'',
                  metadata=None, currency=u'gbp', time_axis='time.from.year',
                  changeset=None):
-        '''\
+        """\
         Constructs a Loader for the :class:`openspending.model.Dataset`
         `dataset_name`. Calling the constructor creates or updates the
         `Dataset` object with `dataset_name`, `label`, `description`,
@@ -88,47 +88,29 @@ class Loader(object):
                 is found (The entry has the same values for the
                 ``unique_keys``) or two :class:`model.class.Entity`
                 objects are found with the same name.
-        '''
+        """
         check_rest_suffix(dataset_name)
 
         if not len(unique_keys) > 0:
             raise LoaderSetupError("Must provide a non-empty set of unique keys!")
 
-        # create a changeset:
-        if changeset is None:
-            name = dataset_name
-            if label:
-                name = "%s (%s)" % (name, label)
-            message = ('Load dataset %s. currency: %s, time axis: %s' %
-                       (name, currency, time_axis))
-            changeset = Changeset()
-            changeset.author = 'system'
-            changeset.message = message
-            changeset.save()
-        self.changeset = changeset
+        self.dataset = Dataset.find_one({'name': dataset_name})
+        self.new_dataset = not self.dataset
 
-        # get the dataset
-        q = {'name': dataset_name}
-        dataset_count = Dataset.find(q).count()
-        if dataset_count == 0:
-            operation = CREATE
-        elif dataset_count == 1:
-            operation = UPDATE
-        else:
-            raise LoaderSetupError(
-                "Ambiguous dataset: %d datasets called '%s' in the db!" %
-                (dataset_count, dataset_name)
-            )
-        data = {"label": label,
-                "currency": currency.upper(),
-                "description": description,
-                "time_axis": time_axis}
-        if metadata is not None:
-            data.update(metadata)
-        Dataset.c.update(q, {"$set": data}, upsert=True)
-        self.dataset = Dataset.find_one(q)
-        self._add_changeobj(Dataset.c.name, self.dataset.id, self.dataset,
-                            operation)
+        if not self.dataset:
+            self.new_dataset = True
+            self.dataset = Dataset(id=util.hash_values([dataset_name]),
+                                   name=dataset_name)
+
+        metadata = metadata or {}
+        metadata.update({
+            "label": label,
+            "currency": currency.upper(),
+            "description": description,
+            "time_axis": time_axis
+        })
+        self.dataset.update(metadata)
+        self.dataset.save()
         self.base_query = {"dataset._id": self.dataset.id}
 
         # caches
@@ -146,22 +128,20 @@ class Loader(object):
         self.ensure_index(Entry, ['to._id', 'from._id', 'amount'])
         self.ensure_index(Classifier, ['taxonomy', 'name'])
         self.ensure_index(Dimension, ['dataset', 'key'])
-        self.ensure_index(Entity, ['name'])
-        # fixme: The entry.name index might be dropped when Base.by_id()
-        #        changes. The 'name' field for entries is not interesting.
-        self.ensure_index(Entry, ['name'])
 
-        # Make sure entries and entities are unique
-        self.existing_entries = self._ensure_unique(Entry, self.unique_keys,
-                                                    self.base_query)
-        self._ensure_unique(Entity, ['name'])
+        # Ensure existing entities are uniquely identified by name
+        self.ensure_index(Entity, ['name'], unique=True, drop_dups=False)
+
+        # Ensure the unique_keys is compatible with existing data.
+        uniques = ['dataset._id'] + self.unique_keys
+        self.ensure_index(Entry, uniques, unique=True, drop_dups=False)
 
         # info's needed to print statistics during the run
         self.num_entries = 0
         self.start_time = None
 
-    def ensure_index(self, modelcls, keys):
-        '''\
+    def ensure_index(self, modelcls, keys, **kwargs):
+        """\
         Ensure an index is created for the collection of
         ``modelcls`` exists for the combination of ``keys``.
         The index will be ascending for all keys.
@@ -170,20 +150,15 @@ class Loader(object):
             A model class inheriting from :class:`openspending.model.Base`.
         ``keys``
             A list of strings.
-        '''
-        log.debug('ensure index for "%s": "%s"...' %
-                 (modelcls.collection_name, '/'.join(keys)))
-        start = time.time()
-        keys = [(key, ASCENDING) for key in keys]
-        modelcls.c.ensure_index(keys)
-        log.debug('done in %0.2fs' % (time.time() - start))
+        """
+        modelcls.c.ensure_index([(key, ASCENDING) for key in keys], **kwargs)
 
-    def _extract_key_values(self, dict_, unique_keys):
-        '''\
+    def _entry_unique_values(self, entry):
+        """\
         Extract the values for the keys in ``unique_keys``
-        from the ``dict_``.
+        from the given``entry``.
 
-        ``dict_``
+        ``entry``
              A dict like object
         ``unique_keys``
              A list of strings
@@ -191,73 +166,21 @@ class Loader(object):
         Returns: A ``tuple`` of values of the unique_keys.
 
         Raises: :exc:`KeyError` if a unique column has no value.
-        '''
+        """
         res = []
 
-        for k in unique_keys:
-            v = deep_get(dict_, k)
+        for k in self.unique_keys:
+            v = deep_get(entry, k)
             # deep_get doesn't raise KeyErrors, so do it here.
             if v is None:
-                raise KeyError("Unique key %s missing from dict: %s" % (k, dict_))
+                raise KeyError("Unique key %s missing from entry: %s" % (k, entry))
             else:
                 res.append(v)
 
-        return tuple(res)
-
-    def _ensure_unique(self, modelcls, keys, query={}):
-        '''\
-        Ensure that in the collection for the model class
-        ``modelcls`` there are not two items with the same values
-        for the ``keys``.
-
-        Not part of the ``Loader`` API!
-
-        ``modelcls``
-            a ``class`` that inherits from :class:`openspending.model.Base`.
-        ``keys``
-            A list of keys for which the entries have to be unique.
-        ``query``
-            A mongodb query spec to limit the elements in the collection
-            that will be checked.
-        ``cache``
-            Use a cache (*dict*) to store the objectid of all entries that
-            are in this dataset.
-
-        Raises: ``ValueError`` if two identical elements are found.
-        '''
-        start = time.time()
-        index = {}
-        log.debug('ensure unique items for %s (%s) ...' %
-                  (modelcls, '/'.join(keys)))
-
-        items = modelcls.find(query, fields=keys)
-
-        for item in items:
-            values = self._extract_key_values(item, keys)
-            if values in index:
-                value_dict = dict(zip(keys, values))
-                msg = ('%s with unique keys is present twice. '
-                       'keys/values: %s, query: %s') % (modelcls.__name__,
-                                                        str(value_dict),
-                                                        self.base_query)
-                raise ValueError(msg)
-            index[values] = item['_id']
-
-        log.debug("... done. %s instances checked in %0.2fs" %
-                  (len(index), time.time() - start))
-        return index
-
-    def _add_changeobj(self, collection_name, _id, data, operation_type):
-        change = ChangeObject()
-        object_id = [collection_name, _id]
-        change.object_id = object_id
-        change.data = data
-        change.operation_type = operation_type
-        change.changeset = self.changeset
-        change.save()
+        return res
 
     def create_entry(self, **entry):
-        '''\
+        """\
         Create or update an :class:`openspending.model.Entry` object in the
         database.
 
@@ -281,7 +204,7 @@ class Loader(object):
 
         Raises: ``AssertionError`` in some cases if the Entry violates
         the datamodel (fixme: full assertions and description!)
-        '''
+        """
         assert 'amount' in entry, "No amount!"
         assert isinstance(entry['amount'], float), entry['amount']
         assert 'to' in entry, "No recipient!"
@@ -314,21 +237,27 @@ class Loader(object):
             if isinstance(obj, Entity):
                 self.entitify_entry(entry, obj, key)
 
-        entry_cache_key = self._extract_key_values(entry, self.unique_keys)
-        existing_entry_id = self.existing_entries.get(entry_cache_key, None)
-        if existing_entry_id is not None:
-            upsert_query = {'_id': existing_entry_id}
-            Entry.c.update(upsert_query, {"$set": entry}, upsert=True)
-            entry['_id'] = existing_entry_id
-        else:
-            uniques = [self.dataset.name]
-            uniques.extend(entry_cache_key)
-            entry['_id'] = util.hash_values(uniques)
-            Entry.c.insert(entry)
+        entry_uniques = [self.dataset.name]
+        entry_uniques.extend(self._entry_unique_values(entry))
+        entry_id = util.hash_values(entry_uniques)
 
-        # Add a ChangeObject for this change
-        operation_type = (existing_entry_id is None) and CREATE or UPDATE
-        self._add_changeobj(Entry.c.name, entry['_id'], entry, operation_type)
+        extant_entry = Entry.find_one({'_id': entry_id})
+
+        if extant_entry:
+            if self.new_dataset:
+                log.warn("Duplicate entry found for new dataset '%s'. This is "
+                         "almost certainly not what you wanted. Are you sure "
+                         "that your unique_keys are truly unique across the "
+                         "dataset? Unique keys: %s", self.dataset.name,
+                         self._entry_unique_values(entry))
+            else:
+                log.debug("Updating extant entry '%s' with new data", entry_id)
+            extant_entry.update(entry)
+            extant_entry.save()
+        else:
+            e = Entry(id=entry_id)
+            e.update(entry)
+            e.save()
 
         # Print progress
         self.num_entries += 1
@@ -336,14 +265,14 @@ class Loader(object):
             now = time.time()
             timediff = now - self.start_time
             self.start_time = now
-            log.debug("%s loaded %s in %0.2fs" % (self.dataset.name,
-                                                  self.num_entries,
-                                                  timediff))
-        return {'_id': entry['_id']}
+            log.debug("%s loaded %s in %0.2fs", self.dataset.name,
+                      self.num_entries, timediff)
+
+        return {'_id': entry_id}
 
     def create_entity(self, name=None, label=u'', description=u'',
                       _cache=None, match_keys=('name', ), **entity):
-        '''\
+        """\
         Create or update an :class:`openspending.model.Entity` object in the
         database when this is called for the entity the first time.
         An existing entity is looked up with the entitie's data for
@@ -379,7 +308,7 @@ class Loader(object):
             If match_keys is not list or tuple.
         :exc:`KeyError`
             If a given match_key is not present in the entity.
-        '''
+        """
         # assertions
         check_rest_suffix(name)
         if not isinstance(match_keys, (list, tuple)):
@@ -408,14 +337,12 @@ class Loader(object):
 
             Entity.c.update(query, {"$set": entity}, upsert=True)
             new_entity = Entity.find_one(query)
-            self._add_changeobj(Entity.c.name, new_entity['_id'],
-                                new_entity, operation)
             cache[cache_key] = new_entity
 
         return cache[cache_key]
 
     def get_classifier(self, name, taxonomy, _cache=None):
-        '''\
+        """\
         Get the classifier object with the name ``name`` for the taxonomy
         ``taxonomy``. This will be cached to speed up the loader
 
@@ -431,7 +358,7 @@ class Loader(object):
 
         Returns: An :class:`openspending.model.Classifier` object if found or
         ``None``.
-        '''
+        """
         if _cache is None:
             _cache = self.classifier_cache
         if not (name, taxonomy) in _cache:
@@ -440,7 +367,7 @@ class Loader(object):
 
     def create_classifier(self, name, taxonomy, label=u'', description=u'',
                           _cache=None, **classifier):
-        '''\
+        """\
         Create a :class:openspending.model.`Classifier`. The ``name`` has to
         be unique for the ``taxonomy``. The ``classifier`` will be updated
         with the values for ``label``, ``description`` and
@@ -469,7 +396,7 @@ class Loader(object):
         Raises:
            AssertionError if more than one ``Classifer`` object with the
            Name existes in the ``taxonomy``
-        '''
+        """
         if _cache is None:
             _cache = self.classifier_cache
         if not (name, taxonomy) in _cache:
@@ -481,12 +408,10 @@ class Loader(object):
             classifier = create_classifier(name, taxonomy, label,
                                            description, **classifier)
             _cache[(name, taxonomy)] = classifier
-            self._add_changeobj(Classifier.c.name, classifier.id,
-                                classifier, operation)
         return _cache[(name, taxonomy)]
 
     def create_dimension(self, key, label, description, **kwargs):
-        '''\
+        """\
         Describe the data you save on *entries* with the key *key*.
         Describe it with a *label* and a *description*.
 
@@ -505,12 +430,12 @@ class Loader(object):
 
         Raises: ``TypeError`` if one of the arguments is of the wrong
         type.
-        '''
+        """
         create_dimension(self.dataset.name, key, label,
                          description=description, **kwargs)
 
     def classify_entry(self, entry, classifier, name):
-        '''\
+        """\
         Update the *entry* to be classified with *classifier*.
         *entry* is mutated, but not returned.
 
@@ -524,11 +449,11 @@ class Loader(object):
             will be saved. This my be the same as classifier['name'].
 
         return:``None``
-        '''
+        """
         classify_entry(entry, classifier, name)
 
     def entitify_entry(self, entry, entity, name):
-        '''\
+        """\
         Update the *entry* to use the *entity* for the
         dimension *name*.
 
@@ -542,12 +467,12 @@ class Loader(object):
             will be saved.
 
         return:``None``
-        '''
+        """
         entitify_entry(entry, entity, name)
 
     def create_view(self, cls, add_filters, name, label, dimension,
                     breakdown=None, view_filters={}):
-        '''\
+        """\
         Create a view. The view will be computed when you call
         :meth:`finalize`.
 
@@ -569,7 +494,7 @@ class Loader(object):
             ...
 
         Returns: A :class:`openspending.lib.views.View` object.
-        '''
+        """
         log.debug("pre-aggregating view %s on %r where %r",
                   name, cls, view_filters)
         view = View(self.dataset, name, label, dimension,
@@ -582,11 +507,11 @@ class Loader(object):
         return view
 
     def compute_aggregates(self):
-        '''\
+        """\
         This method has to be called as the last method when
         using the loader. It will add additional, required data
         to the database.
-        '''
+        """
         log.debug("updating distinct values...")
         update_distincts(self.dataset.name)
         log.debug("updating all cubes...")
