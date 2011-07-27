@@ -1,6 +1,7 @@
 from bson.dbref import DBRef
 
-from openspending.model import Classifier, Dataset, Entry, Entity, mongo
+from openspending import mongo
+from openspending.model import Classifier, Dataset, Entry, Entity
 
 from openspending.etl import loader
 from openspending.etl import util
@@ -34,9 +35,8 @@ class TestLoader(LoaderTestCase):
         h.assert_equal(ldr.unique_keys, ['a', 'b', 'c', 'z'])
 
     def test_loader_creates_indexes(self):
-        db = mongo.db()
-        db.create_collection('entry')
-        db.create_collection('entity')
+        mongo.db.create_collection('entry')
+        mongo.db.create_collection('entity')
         h.assert_equal(self._get_index_num(Entry), 1)
         h.assert_equal(self._get_index_num(Entity), 1)
 
