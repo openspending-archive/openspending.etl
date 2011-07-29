@@ -76,7 +76,8 @@ def dispatch_job(job_id, config, task, args=None):
     if args is None:
         args = ()
 
-    cmd = ['openspendingetld', job_id, config, task]
+    bin = os.path.join(sys.prefix, 'bin', 'openspendingetld')
+    cmd = [bin, job_id, config, task]
     cmd.extend(args)
 
     try: # python >= 2.7
