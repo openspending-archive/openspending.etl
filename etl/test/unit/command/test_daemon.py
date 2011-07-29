@@ -6,14 +6,11 @@ from pylons import config
 from openspending.etl.test import TestCase, helpers as h
 from openspending.etl.command import daemon
 
+# We need to find a better way to test this. My attempts to monkeypatch
+# mocks into openspending.etl.tasks haven't worked, perhaps because of
+# the daemonization process?
 
 class TestDaemon(TestCase):
-    def setup(self):
-        super(TestDaemon, self).setup()
-
-    # We need to find a better way to test this. My attempts to monkeypatch
-    # mocks into openspending.etl.tasks haven't worked, perhaps because of
-    # the daemonization process?
     def test_dispatch_job(self):
         daemon.dispatch_job('test', config['__file__'], 'test_noop')
 
@@ -61,7 +58,4 @@ class TestDaemon(TestCase):
 
     def test_dispatch_twice(self):
         h.skip("FIXME: work out how to test that AlreadyLocked gets thrown.")
-
-    def teardown(self):
-        super(TestDaemon, self).teardown()
 
