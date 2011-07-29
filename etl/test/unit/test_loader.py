@@ -1,7 +1,8 @@
 from bson.dbref import DBRef
 
 from openspending import mongo
-from openspending.model import Classifier, Dataset, Entry, Entity
+from openspending import model
+from openspending.model import Classifier, Dataset, Entity
 
 from openspending.etl import loader
 from openspending.etl import util
@@ -37,19 +38,19 @@ class TestLoader(LoaderTestCase):
     def test_loader_creates_indexes(self):
         mongo.db.create_collection('entry')
         mongo.db.create_collection('entity')
-        h.assert_equal(self._get_index_num(Entry), 1)
+        h.assert_equal(len(mongo.db[model.entry.collection].index_information()), 1)
         h.assert_equal(self._get_index_num(Entity), 1)
 
         self._make_loader()
-        h.assert_equal(self._get_index_num(Entry), 8)
+        h.assert_equal(len(mongo.db[model.entry.collection].index_information()), 8)
         h.assert_equal(self._get_index_num(Entity), 2)
 
     @h.raises(mongo.errors.DuplicateKeyError)
     def test_loader_checks_duplicate_entries(self):
         h.skip("FIXME: skip until bunkered datasets")
         d = Dataset(name='foo').save()
-        Entry(name='Test Entry', dataset=d).save()
-        Entry(name='Test Entry', dataset=d).save()
+        model.entry.create({'name': 'Test Entry'}, d)
+        model.entry.create({'name': 'Test Entry'}, d)
 
         self._make_loader(unique_keys=['name'])
 

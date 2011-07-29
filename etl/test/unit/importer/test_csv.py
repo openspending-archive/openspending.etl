@@ -2,8 +2,9 @@ from os.path import dirname, join
 from StringIO import StringIO
 from urlparse import urlunparse
 
+from openspending import model
 from openspending.lib import json
-from openspending.model import Dataset, Entry
+from openspending.model import Dataset
 from openspending.etl.test import DatabaseTestCase, helpers as h
 
 from openspending.etl.importer import CSVImporter
@@ -41,9 +42,9 @@ class TestCSVImporter(DatabaseTestCase):
         dataset = Dataset.find_one()
         h.assert_true(dataset is not None, "Dataset should not be None")
         h.assert_equal(dataset.name, "test-csv")
-        entries = list(Entry.find({"dataset.name": dataset.name}))
-        h.assert_equal(len(entries), 4)
-        entry = Entry.find_one({"provenance.line": 2})
+        entries = model.entry.find({"dataset.name": dataset.name})
+        h.assert_equal(entries.count(), 4)
+        entry = model.entry.find_one({"provenance.line": 2})
         h.assert_true(entry is not None,
                       "Entry with name could not be found")
         h.assert_equal(entry.amount, 130000.0)
@@ -57,8 +58,8 @@ class TestCSVImporter(DatabaseTestCase):
         dataset = Dataset.find_one()
         h.assert_true(dataset is not None, "Dataset should not be None")
 
-        entries = list(Entry.find({"dataset.name": dataset.name}))
-        h.assert_equal(len(entries), 5)
+        entries = model.entry.find({"dataset.name": dataset.name})
+        h.assert_equal(entries.count(), 5)
 
         entry = entries[0]
         h.assert_equal(entry['from']['label'], 'Test From')
@@ -134,7 +135,7 @@ class TestCSVImportDatasets(DatabaseTestCase):
         h.assert_equal(len(importer.errors), 0)
 
         # check correct number of entries
-        entries = Entry.find({"dataset.name": model['dataset']['name']})
+        entries = model.entry.find({"dataset.name": model['dataset']['name']})
         h.assert_equal(entries.count(), lines)
 
     def _test_mapping(self, name):
