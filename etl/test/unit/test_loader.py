@@ -79,14 +79,14 @@ class TestLoader(LoaderTestCase):
     def test_create_entry(self):
         loader = self._make_loader()
         entry = self._make_entry(loader)
-        h.assert_true(isinstance(entry, Entry))
+        h.assert_equal(entry['name'], 'Test Entry')
 
     def test_create_entry_id_from_unique_keys(self):
         loader = self._make_loader(dataset_name="monkeys",
                                    unique_keys=['ka', 'kb', 'kc'])
         entry = self._make_entry(loader, ka="foo", kb="bar", kc="baz")
 
-        h.assert_equal(entry.id, util.hash_values(['monkeys', 'foo', 'bar', 'baz']))
+        h.assert_equal(entry['_id'], util.hash_values(['monkeys', 'foo', 'bar', 'baz']))
 
     def test_create_entry_returns_query_spec(self):
         loader = self._make_loader()
@@ -97,8 +97,8 @@ class TestLoader(LoaderTestCase):
                  'first': u'first',
                  'second': u'second',
                  'extra': u'extra'}
-        query_spec = loader.create_entry(**entry)
-        fetched_entry = Entry.find_one(query_spec)
+        _id = loader.create_entry(**entry)
+        fetched_entry = model.entry.get(_id)
         h.assert_equal(fetched_entry['name'], 'one')
 
     def test_create_entry_does_not_delete_attributes_in_existing(self):
@@ -167,7 +167,7 @@ class TestLoader(LoaderTestCase):
         e1 = self._make_entry(loader, id='123', name='foo')
         e2 = self._make_entry(loader, id='456', name='bar')
 
-        res = Entry.find({'dataset.name': 'test'})
+        res = model.entry.find({'dataset.name': 'test'})
         h.assert_equal(res.count(), 2)
 
     def test_entries_same_unique_keys(self):
@@ -175,9 +175,9 @@ class TestLoader(LoaderTestCase):
         self._make_entry(loader, id='123', name='foo')
         self._make_entry(loader, id='123', name='bar')
 
-        res = Entry.find({'dataset.name': 'test'})
+        res = model.entry.find({'dataset.name': 'test'})
         h.assert_equal(res.count(), 1)
-        h.assert_equal(res.next().name, 'bar')
+        h.assert_equal(res.next()['name'], 'bar')
 
     def test_loads_are_idempotent(self):
         loader1 = self._make_loader(dataset_name='test', unique_keys=['id'])
@@ -188,7 +188,7 @@ class TestLoader(LoaderTestCase):
         self._make_entry(loader2, id='456', name='bar')
         self._make_entry(loader2, id='789', name='baz')
 
-        res = Entry.find({'dataset.name': 'test'})
+        res = model.entry.find({'dataset.name': 'test'})
         h.assert_equal(res.count(), 3)
 
     # Create Entities

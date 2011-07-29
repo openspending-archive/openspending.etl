@@ -48,7 +48,7 @@ class LoaderTestCase(DatabaseTestCase):
         return loader
 
     def _make_entry(self, loader, **kwargs):
-        from openspending.model import Entry
+        from openspending import model
 
         entry = {'name': 'Test Entry',
                  'amount': 1000.00,
@@ -61,8 +61,8 @@ class LoaderTestCase(DatabaseTestCase):
         if 'to' not in entry:
             entry['to'] = loader.create_entity(u'Test To Entity')
 
-        spec = loader.create_entry(**entry)
-        new = Entry.find_one(spec)
+        _id = loader.create_entry(**entry)
+        new = model.entry.get(_id)
         return new
 
     def _make_entity(self, loader, **kwargs):

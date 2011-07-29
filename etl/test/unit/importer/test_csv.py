@@ -36,8 +36,8 @@ def csvimport_fixture(name):
 class TestCSVImporter(DatabaseTestCase):
 
     def test_successful_import(self):
-        data, model = csvimport_fixture('successful_import')
-        importer = CSVImporter(data, model)
+        data, dmodel = csvimport_fixture('successful_import')
+        importer = CSVImporter(data, dmodel)
         importer.run()
         dataset = Dataset.find_one()
         h.assert_true(dataset is not None, "Dataset should not be None")
@@ -47,11 +47,11 @@ class TestCSVImporter(DatabaseTestCase):
         entry = model.entry.find_one({"provenance.line": 2})
         h.assert_true(entry is not None,
                       "Entry with name could not be found")
-        h.assert_equal(entry.amount, 130000.0)
+        h.assert_equal(entry['amount'], 130000.0)
 
     def test_successful_import_with_simple_testdata(self):
-        data, model = csvimport_fixture('simple')
-        importer = CSVImporter(data, model)
+        data, dmodel = csvimport_fixture('simple')
+        importer = CSVImporter(data, dmodel)
         importer.run()
         h.assert_equal(importer.errors, [])
 
@@ -126,16 +126,16 @@ class TestCSVImportDatasets(DatabaseTestCase):
             f.seek(0)
 
     def _test_import(self, name):
-        data, model = csvimport_fixture(name)
+        data, dmodel = csvimport_fixture(name)
         lines = self.count_lines_in_stream(data) - 1 # -1 for header row
 
-        importer = CSVImporter(data, model)
+        importer = CSVImporter(data, dmodel)
         importer.run()
 
         h.assert_equal(len(importer.errors), 0)
 
         # check correct number of entries
-        entries = model.entry.find({"dataset.name": model['dataset']['name']})
+        entries = model.entry.find({"dataset.name": dmodel['dataset']['name']})
         h.assert_equal(entries.count(), lines)
 
     def _test_mapping(self, name):

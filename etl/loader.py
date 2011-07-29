@@ -8,9 +8,10 @@ from openspending.lib.aggregator import update_distincts
 from openspending.lib.cubes import Cube
 from openspending.lib.util import check_rest_suffix, deep_get
 from openspending.logic.classifier import create_classifier, get_classifier
-from openspending.logic.entry import classify_entry, entitify_entry
 from openspending.logic.dimension import create_dimension
-from openspending.model import Classifier, Dataset, Dimension, Entry, Entity
+from openspending import model
+from openspending import mongo
+from openspending.model import Classifier, Dataset, Dimension, Entity
 from openspending.ui.lib.views import View
 
 from openspending.etl import util
@@ -39,9 +40,9 @@ class Loader(object):
         `dataset_name`. Calling the constructor creates or updates the
         `Dataset` object with `dataset_name`, `label`, `description`,
         `metadata` and `currency`. The Loader instance can only be used
-        to create :class:`openspending.model.Entry` objects with the same set
-        of `unique_keys`. If you need to create another type of
-        ``Entry`` objects instantiate another ``Loader``.
+        to create ``entry`` objects with the same set of `unique_keys`. If you
+        need to create another type of ``entry`` objects instantiate another
+        ``Loader``.
 
         ``dataset_name``
             The unique name for the dataset.
@@ -79,11 +80,6 @@ class Loader(object):
             ``LoaderSetupError`` if more than one dataset with the name
                 ``dataset_name`` exists already, or if no ``unique_keys`` are
                 provided.
-            ``ValueError``
-                If and duplicated :class:`openspending.model.Entry` object
-                is found (The entry has the same values for the
-                ``unique_keys``) or two :class:`model.class.Entity`
-                objects are found with the same name.
         """
         check_rest_suffix(dataset_name)
 
@@ -115,13 +111,13 @@ class Loader(object):
         self.unique_keys = sorted(unique_keys)
 
         # We need indexes to speed up lookups and updates
-        self.ensure_index(Entry, ['dataset._id'])
-        self.ensure_index(Entry, ['dataset.name'])
-        self.ensure_index(Entry, ['classifiers'])
-        self.ensure_index(Entry, ['entities'])
-        self.ensure_index(Entry, ['from._id'])
-        self.ensure_index(Entry, ['to._id'])
-        self.ensure_index(Entry, ['to._id', 'from._id', 'amount'])
+        self.ensure_index(model.entry, ['dataset._id'])
+        self.ensure_index(model.entry, ['dataset.name'])
+        self.ensure_index(model.entry, ['classifiers'])
+        self.ensure_index(model.entry, ['entities'])
+        self.ensure_index(model.entry, ['from._id'])
+        self.ensure_index(model.entry, ['to._id'])
+        self.ensure_index(model.entry, ['to._id', 'from._id', 'amount'])
         self.ensure_index(Classifier, ['taxonomy', 'name'])
         self.ensure_index(Dimension, ['dataset', 'key'])
 
@@ -132,7 +128,7 @@ class Loader(object):
         # FIXME: once datasets have their own namespaces, reenable this uniqueness
         # constraint
         #uniques = ['dataset._id'] + self.unique_keys
-        #self.ensure_index(Entry, uniques, unique=True, drop_dups=False)
+        #self.ensure_index(model.entry, uniques, unique=True, drop_dups=False)
 
         # info's needed to print statistics during the run
         self.num_entries = 0
@@ -149,7 +145,13 @@ class Loader(object):
         ``keys``
             A list of strings.
         """
-        modelcls.c.ensure_index([(key, ASCENDING) for key in keys], **kwargs)
+        # FIXME: remove when all models have same interface
+        try:
+            coll = modelcls.c
+        except AttributeError:
+            coll = mongo.db[modelcls.collection]
+
+        coll.ensure_index([(key, ASCENDING) for key in keys], **kwargs)
 
     def _entry_unique_values(self, entry):
         """\
@@ -179,8 +181,7 @@ class Loader(object):
 
     def create_entry(self, **entry):
         """\
-        Create or update an :class:`openspending.model.Entry` object in the
-        database.
+        Create or update an ``entry`` object in the database.
 
         ``entry``
             A ``dict`` containing at least these information:
@@ -197,10 +198,9 @@ class Loader(object):
             If ``entry`` does not contain a ``currency``, the currency
             of the loader object is used.
 
-        Returns: A mongodb query spec that can be used with
-        :meth:`openspending.model.Entry.find_one()` to get the object.
+        Returns: A mongodb query spec that can be used to get the object.
 
-        Raises: ``AssertionError`` in some cases if the Entry violates
+        Raises: ``AssertionError`` in some cases if the entry violates
         the datamodel (fixme: full assertions and description!)
         """
         assert 'amount' in entry, "No amount!"
@@ -222,13 +222,11 @@ class Loader(object):
         if self.start_time is None:
             self.start_time = time.time()
 
-        # Create the Entry
+        # Create the entry
         if (not 'currency' in entry) or (entry['currency'].upper() == "(EMPTY)"):
             entry['currency'] = self.dataset.currency
         else:
             entry['currency'] = entry['currency'].upper()
-
-        entry['dataset'] = self.dataset.to_ref_dict()
 
         for key in ('to', 'from'):
             obj = entry[key]
@@ -239,7 +237,7 @@ class Loader(object):
         entry_uniques.extend(self._entry_unique_values(entry))
         entry_id = util.hash_values(entry_uniques)
 
-        extant_entry = Entry.find_one({'_id': entry_id})
+        extant_entry = model.entry.get(entry_id)
 
         if extant_entry:
             if self.new_dataset:
@@ -250,12 +248,10 @@ class Loader(object):
                          self._entry_unique_values(entry))
             else:
                 log.debug("Updating extant entry '%s' with new data", entry_id)
-            extant_entry.update(entry)
-            extant_entry.save()
+            model.entry.update(extant_entry, {'$set': entry})
         else:
-            e = Entry(id=entry_id)
-            e.update(entry)
-            e.save()
+            entry['_id'] = entry_id
+            model.entry.create(entry, self.dataset)
 
         # Print progress
         self.num_entries += 1
@@ -266,7 +262,7 @@ class Loader(object):
             log.debug("%s loaded %s in %0.2fs", self.dataset.name,
                       self.num_entries, timediff)
 
-        return {'_id': entry_id}
+        return entry_id
 
     def create_entity(self, name=None, label=u'', description=u'',
                       _cache=None, match_keys=('name', ), **entity):
@@ -439,7 +435,7 @@ class Loader(object):
 
         return:``None``
         """
-        classify_entry(entry, classifier, name)
+        model.entry.classify_entry(entry, classifier, name)
 
     def entitify_entry(self, entry, entity, name):
         """\
@@ -457,7 +453,7 @@ class Loader(object):
 
         return:``None``
         """
-        entitify_entry(entry, entity, name)
+        model.entry.entitify_entry(entry, entity, name)
 
     def create_view(self, cls, add_filters, name, label, dimension,
                     breakdown=None, view_filters={}):
