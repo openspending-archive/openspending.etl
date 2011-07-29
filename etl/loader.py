@@ -129,8 +129,10 @@ class Loader(object):
         self.ensure_index(Entity, ['name'], unique=True, drop_dups=False)
 
         # Ensure the unique_keys is compatible with existing data.
-        uniques = ['dataset._id'] + self.unique_keys
-        self.ensure_index(Entry, uniques, unique=True, drop_dups=False)
+        # FIXME: once datasets have their own namespaces, reenable this uniqueness
+        # constraint
+        #uniques = ['dataset._id'] + self.unique_keys
+        #self.ensure_index(Entry, uniques, unique=True, drop_dups=False)
 
         # info's needed to print statistics during the run
         self.num_entries = 0
