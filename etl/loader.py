@@ -7,11 +7,10 @@ from pymongo import ASCENDING
 from openspending.lib.aggregator import update_distincts
 from openspending.lib.cubes import Cube
 from openspending.lib.util import check_rest_suffix, deep_get
-from openspending.logic.classifier import create_classifier, get_classifier
 from openspending.logic.dimension import create_dimension
 from openspending import model
 from openspending import mongo
-from openspending.model import Classifier, Dataset, Dimension, Entity
+from openspending.model import Dataset, Dimension, Entity
 from openspending.ui.lib.views import View
 
 from openspending.etl import util
@@ -118,7 +117,7 @@ class Loader(object):
         self.ensure_index(model.entry, ['from._id'])
         self.ensure_index(model.entry, ['to._id'])
         self.ensure_index(model.entry, ['to._id', 'from._id', 'amount'])
-        self.ensure_index(Classifier, ['taxonomy', 'name'])
+        self.ensure_index(model.classifier, ['taxonomy', 'name'])
         self.ensure_index(Dimension, ['dataset', 'key'])
 
         # Ensure existing entities are uniquely identified by name
@@ -265,16 +264,13 @@ class Loader(object):
         return entry_id
 
     def create_entity(self, name=None, label=u'', description=u'',
-                      _cache=None, match_keys=('name', ), **entity):
+                      match_keys=('name', ), **entity):
         """\
         Create or update an :class:`openspending.model.Entity` object in the
         database when this is called for the entity the first time.
         An existing entity is looked up with the entitie's data for
         *match_keys*. By default we look up by name, but other data
         like company or tax ids may be more appropriate.
-
-        The entry will only be created/updated if it is not in the
-        ``_cache``.
 
         ``name``
             Name of the entity.
@@ -286,12 +282,6 @@ class Loader(object):
             ``tuple``.
         ``**entity``
             Keyword arguments that are saved in the entity.
-        ``_cache``
-          Use the given ``dict`` like object for caching.
-          Normally not used by callers. It can be used to force an
-          update of an entity that was created/updated by an earlier
-          call. With ``None`` (default), the ``Loader`` uses internal
-          caching.
 
         Returns: The created ``Entity`` object.
 
@@ -313,9 +303,8 @@ class Loader(object):
                        'description': description})
 
         # prepare a cache for the match_keys combination
-        if _cache is None:
-            _cache = self.entity_cache
-        cache = _cache.setdefault(match_keys, {})
+
+        cache = self.entity_cache.setdefault(match_keys, {})
         cache_key = tuple([entity[key] for key in match_keys])
 
         if not cache_key in cache:
@@ -329,71 +318,26 @@ class Loader(object):
 
         return cache[cache_key]
 
-    def get_classifier(self, name, taxonomy, _cache=None):
+    def create_classifier(self, classifier):
         """\
-        Get the classifier object with the name ``name`` for the taxonomy
-        ``taxonomy``. This will be cached to speed up the loader
-
-        ``name``
-          name of the classifier. (``unicode``)
-        ``taxonomy``
-          The taxonomy to which the classifier ``name`` belongs.
-          (``unicode``)
-        ``_cache``
-          Use the given ``dict`` like object for caching.
-          Normally not used by callers. It can be used to ensure the
-          classifier is fetched from the database
-
-        Returns: An :class:`openspending.model.Classifier` object if found or
-        ``None``.
+        Create a classifier from the dict-like object ``classifier``.
+        See :func:`openspending.model.classifier.create` for full details.
         """
-        if _cache is None:
-            _cache = self.classifier_cache
-        if not (name, taxonomy) in _cache:
-            _cache[(name, taxonomy)] = get_classifier(name, taxonomy)
-        return _cache[(name, taxonomy)]
+        name = classifier['name']
+        taxonomy = classifier['taxonomy']
 
-    def create_classifier(self, name, taxonomy, label=u'', description=u'',
-                          _cache=None, **classifier):
-        """\
-        Create a :class:openspending.model.`Classifier`. The ``name`` has to
-        be unique for the ``taxonomy``. The ``classifier`` will be updated
-        with the values for ``label``, ``description`` and
-        ``**classifier``
-        Note that the classifier for ``(name, taxonomy)`` is only created or
-        updated if it is not already in the ``_cache``.
+        if not (name, taxonomy) in self.classifier_cache:
+            existing = model.classifier.find_one({'name': name,
+                                                  'taxonomy': taxonomy})
+            if existing:
+                classifier = existing
+            else:
+                _id = model.classifier.create(classifier)
+                classifier = model.classifier.get(_id)
 
-        Arguments:
+            self.classifier_cache[(name, taxonomy)] = classifier
 
-        ``name``
-          name of the classifier. (``unicode``)
-        ``taxonomy``
-          The taxonomy to which the classifier ``name`` belongs.
-          (``unicode``)
-        ``label``, ``descripiton``, ``**classifiers``
-          used to update the classifier for the first time
-        ``_cache``
-          Use the given ``dict`` like object for caching.
-          Normally not used by callers. It can be used to force an
-          update of a classifier that was created/updated by an earlier
-          call. With ``None`` (default), the ``Loader`` uses internal
-          caching.
-
-        Returns: An :class:`openspending.model.Classifier` object
-
-        Raises:
-           AssertionError if more than one ``Classifer`` object with the
-           Name existes in the ``taxonomy``
-        """
-        if _cache is None:
-            _cache = self.classifier_cache
-        if not (name, taxonomy) in _cache:
-            existing = self.get_classifier(name, taxonomy, _cache=_cache)
-            classifier = create_classifier(name, taxonomy, label,
-                                           description, **classifier)
-            _cache[(name, taxonomy)] = classifier
-
-        return _cache[(name, taxonomy)]
+        return self.classifier_cache[(name, taxonomy)]
 
     def create_dimension(self, key, label, description, **kwargs):
         """\

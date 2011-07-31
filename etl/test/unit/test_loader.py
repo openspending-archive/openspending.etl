@@ -2,7 +2,7 @@ from bson.dbref import DBRef
 
 from openspending import mongo
 from openspending import model
-from openspending.model import Classifier, Dataset, Entity
+from openspending.model import Dataset, Entity
 
 from openspending.etl import loader
 from openspending.etl import util
@@ -230,60 +230,55 @@ class TestLoader(LoaderTestCase):
         entity = loader.create_entity(name=u'Test Entity')
         h.assert_true(entity is loader.entity_cache[('name',)].values()[0])
 
-    def test_entities_cached_with_passed_in_cached(self):
-        loader = self._make_loader()
-        cache = {('name',): {}}
-        entity = loader.create_entity(name=u'Test Entity', _cache=cache)
-        h.assert_true(entity is cache[('name', )].values()[0])
-        h.assert_equal(len(loader.entity_cache), 0)
-
-    # Create Classifiers and classify Entries
+    # Create classifiers and classify Entries
 
     def test_create_classifier(self):
         loader = self._make_loader()
-        classifier = loader.create_classifier(name=u'Test Classifier',
-                                              taxonomy=u'taxonomy')
-        h.assert_true(isinstance(classifier, Classifier))
+        classifier = loader.create_classifier({
+            'name': 'Test Classifier',
+            'taxonomy': 'taxonomy'
+        })
+        h.assert_equal(classifier['name'], 'Test Classifier')
+        h.assert_true(
+            '_id' in classifier,
+            "Loader.create_classifier did not add '_id' field to classifier!"
+        )
 
     def test_create_classifier_does_not_delete_attributes_in_existing(self):
         loader = self._make_loader()
-        classifier = loader.create_classifier(u'Test Classifier',
-                                              taxonomy=u'taxonomy',
-                                              extra=u'extra')
-        h.assert_true('extra' in classifier)
+        classifier = loader.create_classifier({'name': 'Test Classifier',
+                                               'taxonomy': 'taxonomy',
+                                               'extra': 'extra'})
+        h.assert_true('extra' in classifier,
+                      "'extra' field not in classifier!")
+
         new_loader = self._make_loader()
-        upserted_classifier = new_loader.create_classifier(
-            u'Test Classifier', taxonomy=u'taxonomy')
-        h.assert_true('extra' in upserted_classifier)
+
+        upserted_classifier = new_loader.create_classifier({
+            'name': 'Test Classifier',
+            'taxonomy': 'taxonomy'})
+        h.assert_true('extra' in upserted_classifier,
+                      "'extra' field not retained in classifier!")
 
     def test_classifiers_are_cached(self):
         loader = self._make_loader()
-        classifier = loader.create_classifier(name=u'Test Classifier',
-                                              taxonomy=u'taxonomy')
+        classifier = loader.create_classifier({'name': 'Test Classifier',
+                                               'taxonomy': 'taxonomy'})
         h.assert_equal(loader.classifier_cache.values()[0], classifier)
-
-    def test_classifiers_cached_with_passed_in_cache(self):
-        loader = self._make_loader()
-        cache = {}
-        classifier = loader.create_classifier(name=u'Test Classifier',
-                                              taxonomy=u'taxonomy',
-                                              _cache=cache)
-        h.assert_true(classifier is cache.values()[0])
-        h.assert_equal(len(loader.classifier_cache), 0)
 
     def test_classify_entry(self):
         loader = self._make_loader()
-        entry = {'name': u'Test Entry',
+        entry = {'name': 'Test Entry',
                  'amount': 1000.00}
-        c_name = u'support-transparency'
-        c_taxonomy = u'Good Reasons'
-        c_label = u'Support Transparency Initiatives'
-        classifier = loader.create_classifier(name=c_name,
-                                              label=c_label,
-                                              taxonomy=c_taxonomy)
-        loader.classify_entry(entry, classifier, name=u'reason')
-        h.assert_equal(entry.keys(), [u'reason', 'amount', 'name',
-                                        'classifiers'])
+        c_name = 'support-transparency'
+        c_taxonomy = 'Good Reasons'
+        c_label = 'Support Transparency Initiatives'
+        classifier = loader.create_classifier({'name': c_name,
+                                               'label': c_label,
+                                               'taxonomy': c_taxonomy})
+        loader.classify_entry(entry, classifier, name='reason')
+        h.assert_equal(entry.keys(), ['reason', 'amount', 'name',
+                                      'classifiers'])
         h.assert_equal(entry['classifiers'], [classifier['_id']])
         h.assert_equal(entry['reason']['label'], c_label)
         h.assert_equal(entry['reason']['name'], c_name)

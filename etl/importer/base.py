@@ -3,7 +3,8 @@ import logging
 from unidecode import unidecode
 
 from openspending.lib import solr_util as solr
-from openspending.model import Dataset, Classifier, Entity
+from openspending import model
+from openspending.model import Dataset, Entity
 
 from openspending.etl import times
 from openspending.etl.loader import Loader
@@ -14,7 +15,7 @@ from openspending.etl.validation.entry import make_validator
 ENTITY_TYPES = {
     "dataset": Dataset,
     "entity": Entity,
-    "classifier": Classifier
+    "classifier": model.classifier
 }
 
 log = logging.getLogger(__name__)
@@ -108,7 +109,7 @@ class BaseImporter(object):
         self.build_indices()
 
         if self.errors:
-            log.error("Finished import with %d errors:")
+            log.error("Finished import with %d errors:", len(self.errors))
             for err in self.errors:
                 log.error(" - %s", err)
         else:
