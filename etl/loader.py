@@ -7,10 +7,9 @@ from pymongo import ASCENDING
 from openspending.lib.aggregator import update_distincts
 from openspending.lib.cubes import Cube
 from openspending.lib.util import check_rest_suffix, deep_get
-from openspending.logic.dimension import create_dimension
 from openspending import model
 from openspending import mongo
-from openspending.model import Dimension, Entity
+from openspending.model import Entity
 from openspending.ui.lib.views import View
 
 from openspending.etl import util
@@ -119,7 +118,7 @@ class Loader(object):
         self.ensure_index(model.entry, ['to._id'])
         self.ensure_index(model.entry, ['to._id', 'from._id', 'amount'])
         self.ensure_index(model.classifier, ['taxonomy', 'name'])
-        self.ensure_index(Dimension, ['dataset', 'key'])
+        self.ensure_index(model.dimension, ['dataset', 'key'])
 
         # Ensure existing entities are uniquely identified by name
         self.ensure_index(Entity, ['name'], unique=True, drop_dups=False)
@@ -361,8 +360,8 @@ class Loader(object):
         Raises: ``TypeError`` if one of the arguments is of the wrong
         type.
         """
-        create_dimension(self.dataset['name'], key, label,
-                         description=description, **kwargs)
+        model.dimension.create(self.dataset['name'], key, label, description,
+                               **kwargs)
 
     def classify_entry(self, entry, classifier, name):
         """\
