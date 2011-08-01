@@ -222,8 +222,8 @@ class Loader(object):
             self.start_time = time.time()
 
         # Create the entry
-        if (not 'currency' in entry) or (entry['currency'].upper() == "(EMPTY)"):
-            entry['currency'] = self.dataset.currency
+        if not 'currency' in entry or not entry['currency']:
+            entry['currency'] = self.dataset['currency'].upper()
         else:
             entry['currency'] = entry['currency'].upper()
 
