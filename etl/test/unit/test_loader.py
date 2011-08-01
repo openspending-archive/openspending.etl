@@ -2,7 +2,6 @@ from bson.dbref import DBRef
 
 from openspending import mongo
 from openspending import model
-from openspending.model import Entity
 
 from openspending.etl import loader
 from openspending.etl import util
@@ -19,7 +18,8 @@ test_data = {
 class TestLoader(LoaderTestCase):
 
     def _get_index_num(self, cls):
-        return len(cls.c.index_information())
+        indices = mongo.db[cls.collection].index_information()
+        return len(indices)
 
     def test_create_loader(self):
         loader = self._make_loader()
@@ -37,12 +37,12 @@ class TestLoader(LoaderTestCase):
     def test_loader_creates_indexes(self):
         mongo.db.create_collection('entry')
         mongo.db.create_collection('entity')
-        h.assert_equal(len(mongo.db[model.entry.collection].index_information()), 1)
-        h.assert_equal(self._get_index_num(Entity), 1)
+        h.assert_equal(self._get_index_num(model.entry), 1)
+        h.assert_equal(self._get_index_num(model.entity), 1)
 
         self._make_loader()
-        h.assert_equal(len(mongo.db[model.entry.collection].index_information()), 8)
-        h.assert_equal(self._get_index_num(Entity), 2)
+        h.assert_equal(self._get_index_num(model.entry), 8)
+        h.assert_equal(self._get_index_num(model.entity), 2)
 
     @h.raises(mongo.errors.DuplicateKeyError)
     def test_loader_checks_duplicate_entries(self):
@@ -56,8 +56,8 @@ class TestLoader(LoaderTestCase):
 
     @h.raises(mongo.errors.DuplicateKeyError)
     def test_loader_checks_duplicate_entities(self):
-        Entity(name=u'Test Entity').save()
-        Entity(name=u'Test Entity').save()
+        model.entity.create({'name': 'Test Entity'})
+        model.entity.create({'name': 'Test Entity'})
 
         self._make_loader(unique_keys=['name'])
 
@@ -97,6 +97,8 @@ class TestLoader(LoaderTestCase):
                  'first': u'first',
                  'second': u'second',
                  'extra': u'extra'}
+        entry['from'] = model.entity.get_ref_dict(entry['from'])
+        entry['to'] = model.entity.get_ref_dict(entry['to'])
         _id = loader.create_entry(**entry)
         fetched_entry = model.entry.get(_id)
         h.assert_equal(fetched_entry['name'], 'one')
@@ -141,6 +143,9 @@ class TestLoader(LoaderTestCase):
                 'extra': u'extra'
             }
 
+            entry['from'] = model.entity.get_ref_dict(entry['from'])
+            entry['to'] = model.entity.get_ref_dict(entry['to'])
+
             entry.update(kwargs)
             if miss is not None:
                 del entry[miss]
@@ -153,10 +158,10 @@ class TestLoader(LoaderTestCase):
                           **entry(miss='to'))
         h.assert_raises(AssertionError, loader.create_entry,
                           **entry(miss='from'))
-        h.assert_raises(AssertionError, loader.create_entry,
-                          **entry(to=u'no_entity'))
-        h.assert_raises(AssertionError, loader.create_entry,
-                          **entry(**{'from': u'no_entity'}))
+        h.assert_raises(TypeError, loader.create_entry,
+                          **entry(to='no_entity'))
+        h.assert_raises(TypeError, loader.create_entry,
+                          **entry(**{'from': 'no_entity'}))
         h.assert_raises(KeyError, loader.create_entry,
                           **entry(miss='first'))
         h.assert_raises(KeyError, loader.create_entry,
@@ -196,18 +201,20 @@ class TestLoader(LoaderTestCase):
     def test_create_entity(self):
         loader = self._make_loader()
         entity = loader.create_entity(name=u'Test Entity')
-        h.assert_true(isinstance(entity, Entity))
+        h.assert_true('_id' in entity,
+                      'Loader.create_entity did not add _id to entity')
+        h.assert_equal(entity['name'], 'Test Entity')
 
     def test_create_entry_with_different_match_keys(self):
         loader = self._make_loader()
         loader.create_entity(name=u'Test', company_id=1000,
                              match_keys=('company_id',))
         h.assert_equal(len(loader.entity_cache[('company_id',)]), 1)
-        h.assert_true(Entity.find_one({'company_id': 1000}) is not None)
+        h.assert_true(model.entity.find_one({'company_id': 1000}) is not None)
 
     def test_create_finds_existing_entity_in_db(self):
-        Entity.c.save({'name': 'existing', 'company_id': 1000})
-        existing = Entity.find_one({'company_id': 1000})
+        model.entity.create({'name': 'existing', 'company_id': 1000})
+        existing = model.entity.find_one({'company_id': 1000})
 
         loader = self._make_loader()
         loader.create_entity(name=u'Test', company_id=1000,
@@ -215,7 +222,7 @@ class TestLoader(LoaderTestCase):
         cached = loader.entity_cache[('company_id',)][(1000,)]
 
         h.assert_equal(existing['_id'], cached['_id'])
-        h.assert_equal(Entity.find({'company_id': 1000}).count(), 1)
+        h.assert_equal(model.entity.find({'company_id': 1000}).count(), 1)
 
     def test_create_entity_does_not_delete_attributes_in_existing(self):
         loader = self._make_loader()

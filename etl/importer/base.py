@@ -4,19 +4,12 @@ from unidecode import unidecode
 
 from openspending.lib import solr_util as solr
 from openspending import model
-from openspending.model import Entity
 
 from openspending.etl import times
 from openspending.etl.loader import Loader
 from openspending.etl.validation import Invalid
 from openspending.etl.validation.model import Model
 from openspending.etl.validation.entry import make_validator
-
-ENTITY_TYPES = {
-    "dataset": model.dataset,
-    "entity": Entity,
-    "classifier": model.classifier
-}
 
 log = logging.getLogger(__name__)
 
@@ -161,9 +154,9 @@ class BaseImporter(object):
         log.info("Generating aggregates and views")
         self.loader.flush_aggregates()
         for view in self.views:
-            entity = ENTITY_TYPES.get(view.get('entity'))
+            entity_cls = model[view.get('entity')]
             self.loader.create_view(
-                entity,
+                entity_cls,
                 view.get('filters', {}),
                 name=view.get('name'),
                 label=view.get('label'),

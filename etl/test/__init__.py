@@ -61,6 +61,9 @@ class LoaderTestCase(DatabaseTestCase):
         if 'to' not in entry:
             entry['to'] = loader.create_entity(u'Test To Entity')
 
+        entry['from'] = model.entity.get_ref_dict(entry['from'])
+        entry['to'] = model.entity.get_ref_dict(entry['to'])
+
         _id = loader.create_entry(**entry)
         new = model.entry.get(_id)
         return new

@@ -9,7 +9,6 @@ from openspending.lib.cubes import Cube
 from openspending.lib.util import check_rest_suffix, deep_get
 from openspending import model
 from openspending import mongo
-from openspending.model import Entity
 from openspending.ui.lib.views import View
 
 from openspending.etl import util
@@ -121,7 +120,7 @@ class Loader(object):
         self.ensure_index(model.dimension, ['dataset', 'key'])
 
         # Ensure existing entities are uniquely identified by name
-        self.ensure_index(Entity, ['name'], unique=True, drop_dups=False)
+        self.ensure_index(model.entity, ['name'], unique=True, drop_dups=False)
 
         # Ensure the unique_keys is compatible with existing data.
         # FIXME: once datasets have their own namespaces, reenable this uniqueness
@@ -188,9 +187,9 @@ class Loader(object):
             ``amount``
                 amount spend
             ``from``
-                :class:`openspending.model.Entity` object
+                dict-like ``entity`` object
             ``to``
-                :class:`openspending.model.Entity` object
+                dict-like ``entity`` object
             ``data for unique keys``
                 Data for all ``unique_keys`` of the ``Loader``
 
@@ -208,15 +207,12 @@ class Loader(object):
         assert 'from' in entry, "No spender!"
         for key in ('to', 'from'):
             entity_ = entry[key]
-            if isinstance(entity_, Entity):
+            ref = entity_['ref']
+            ## FIXME: this kind of mad validation shouldn't be happening here.
+            if (isinstance(ref, DBRef) and
+                ref.collection == model.entity.collection):
                 continue
-            if isinstance(entity_, dict):
-                ref = entity_.get('ref')
-                if (isinstance(ref, DBRef) and
-                    ref.collection == Entity.collection_name):
-                    continue
-            raise AssertionError('Wrong value for "%s": "%s"' %
-                                 (key, entity_))
+            raise AssertionError('Wrong value for "%s": "%s"' % (key, entity_))
 
         if self.start_time is None:
             self.start_time = time.time()
@@ -228,9 +224,7 @@ class Loader(object):
             entry['currency'] = entry['currency'].upper()
 
         for key in ('to', 'from'):
-            obj = entry[key]
-            if isinstance(obj, Entity):
-                self.entitify_entry(entry, obj, key)
+            self.entitify_entry(entry, entry[key], key)
 
         entry_uniques = [self.dataset['name']]
         entry_uniques.extend(self._entry_unique_values(entry))
@@ -266,11 +260,10 @@ class Loader(object):
     def create_entity(self, name=None, label=u'', description=u'',
                       match_keys=('name', ), **entity):
         """\
-        Create or update an :class:`openspending.model.Entity` object in the
-        database when this is called for the entity the first time.
-        An existing entity is looked up with the entitie's data for
-        *match_keys*. By default we look up by name, but other data
-        like company or tax ids may be more appropriate.
+        Create or update an ``entity`` object in the database when this is
+        called for the entity the first time. An existing entity is looked up
+        with the entity's data for *match_keys*. By default we look up by name,
+        but other data like company or tax ids may be more appropriate.
 
         ``name``
             Name of the entity.
@@ -283,7 +276,7 @@ class Loader(object):
         ``**entity``
             Keyword arguments that are saved in the entity.
 
-        Returns: The created ``Entity`` object.
+        Returns: The created ``entity`` object.
 
         Raises:
 
@@ -312,8 +305,8 @@ class Loader(object):
             for key in match_keys:
                 query[key] = entity[key]
 
-            Entity.c.update(query, {"$set": entity}, upsert=True)
-            new_entity = Entity.find_one(query)
+            model.entity.update(query, {"$set": entity}, upsert=True)
+            new_entity = model.entity.find_one(query)
             cache[cache_key] = new_entity
 
         return cache[cache_key]
