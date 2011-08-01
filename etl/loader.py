@@ -86,9 +86,8 @@ class Loader(object):
         self.new_dataset = not self.dataset
 
         if self.new_dataset:
-            _id = model.dataset.create({'_id': util.hash_values([dataset_name]),
-                                        'name': dataset_name})
-            self.dataset = model.dataset.get(_id)
+            self.dataset = model.dataset.create({'_id': util.hash_values([dataset_name]),
+                                                 'name': dataset_name})
 
         metadata = metadata or {}
         metadata.update({
@@ -325,8 +324,7 @@ class Loader(object):
             if existing:
                 classifier = existing
             else:
-                _id = model.classifier.create(classifier)
-                classifier = model.classifier.get(_id)
+                classifier = model.classifier.create(classifier)
 
             self.classifier_cache[(name, taxonomy)] = classifier
 

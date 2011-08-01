@@ -47,8 +47,7 @@ class TestLoader(LoaderTestCase):
     @h.raises(mongo.errors.DuplicateKeyError)
     def test_loader_checks_duplicate_entries(self):
         h.skip("FIXME: skip until bunkered datasets")
-        _id = model.dataset.create({'name': 'foo'})
-        d = model.dataset.get(_id)
+        d = model.dataset.create({'name': 'foo'})
         model.entry.create({'name': 'Test Entry'}, d)
         model.entry.create({'name': 'Test Entry'}, d)
 
