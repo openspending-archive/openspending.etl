@@ -26,7 +26,7 @@ class TaskController(BaseController):
     @authz.requires('admin')
     def remove_dataset(self, dataset=None):
         if dataset is None:
-            c.datasets = model.Dataset.find()
+            c.datasets = model.dataset.find()
             return render('task/remove_dataset.html')
 
         c.job_id = 'remove_%s' % dataset

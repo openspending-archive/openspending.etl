@@ -4,7 +4,6 @@ from urlparse import urlunparse
 
 from openspending import model
 from openspending.lib import json
-from openspending.model import Dataset
 from openspending.etl.test import DatabaseTestCase, helpers as h
 
 from openspending.etl.importer import CSVImporter
@@ -39,10 +38,10 @@ class TestCSVImporter(DatabaseTestCase):
         data, dmodel = csvimport_fixture('successful_import')
         importer = CSVImporter(data, dmodel)
         importer.run()
-        dataset = Dataset.find_one()
+        dataset = model.dataset.find_one()
         h.assert_true(dataset is not None, "Dataset should not be None")
-        h.assert_equal(dataset.name, "test-csv")
-        entries = model.entry.find({"dataset.name": dataset.name})
+        h.assert_equal(dataset['name'], "test-csv")
+        entries = model.entry.find({"dataset.name": dataset['name']})
         h.assert_equal(entries.count(), 4)
         entry = model.entry.find_one({"provenance.line": 2})
         h.assert_true(entry is not None,
@@ -55,10 +54,10 @@ class TestCSVImporter(DatabaseTestCase):
         importer.run()
         h.assert_equal(importer.errors, [])
 
-        dataset = Dataset.find_one()
+        dataset = model.dataset.find_one()
         h.assert_true(dataset is not None, "Dataset should not be None")
 
-        entries = model.entry.find({"dataset.name": dataset.name})
+        entries = model.entry.find({"dataset.name": dataset['name']})
         h.assert_equal(entries.count(), 5)
 
         entry = entries[0]

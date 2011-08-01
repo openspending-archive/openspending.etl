@@ -2,7 +2,7 @@ from bson.dbref import DBRef
 
 from openspending import mongo
 from openspending import model
-from openspending.model import Dataset, Entity
+from openspending.model import Entity
 
 from openspending.etl import loader
 from openspending.etl import util
@@ -23,8 +23,7 @@ class TestLoader(LoaderTestCase):
 
     def test_create_loader(self):
         loader = self._make_loader()
-        h.assert_true(isinstance(loader.dataset, Dataset))
-        h.assert_equal(loader.dataset.name, u'test_dataset')
+        h.assert_equal(loader.dataset['name'], u'test_dataset')
         h.assert_equal(loader.num_entries, 0)
 
     @h.raises(loader.LoaderSetupError)
@@ -48,7 +47,8 @@ class TestLoader(LoaderTestCase):
     @h.raises(mongo.errors.DuplicateKeyError)
     def test_loader_checks_duplicate_entries(self):
         h.skip("FIXME: skip until bunkered datasets")
-        d = Dataset(name='foo').save()
+        _id = model.dataset.create({'name': 'foo'})
+        d = model.dataset.get(_id)
         model.entry.create({'name': 'Test Entry'}, d)
         model.entry.create({'name': 'Test Entry'}, d)
 
@@ -65,14 +65,14 @@ class TestLoader(LoaderTestCase):
         self._make_loader(dataset_name="foo")
 
         h.assert_true(
-            Dataset.find_one({'name': 'foo'}),
+            model.dataset.find_one({'name': 'foo'}),
             "Loader didn't create new dataset!"
         )
 
     def test_loader_uses_extant_dataset(self):
-        Dataset(name="foo", id=123).save()
+        model.dataset.create({'name': 'foo', '_id': '123'})
         ldr = self._make_loader(dataset_name="foo")
-        h.assert_equal(ldr.dataset.id, 123)
+        h.assert_equal(ldr.dataset['_id'], '123')
 
     # Create Entries
 

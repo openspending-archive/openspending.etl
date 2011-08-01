@@ -4,7 +4,7 @@ from unidecode import unidecode
 
 from openspending.lib import solr_util as solr
 from openspending import model
-from openspending.model import Dataset, Entity
+from openspending.model import Entity
 
 from openspending.etl import times
 from openspending.etl.loader import Loader
@@ -13,7 +13,7 @@ from openspending.etl.validation.model import Model
 from openspending.etl.validation.entry import make_validator
 
 ENTITY_TYPES = {
-    "dataset": Dataset,
+    "dataset": model.dataset,
     "entity": Entity,
     "classifier": model.classifier
 }

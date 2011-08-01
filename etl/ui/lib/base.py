@@ -72,23 +72,12 @@ class BaseController(WSGIController):
         c.items_per_page = int(request.params.get('items_per_page', 20))
         c.state = session.get('state', {})
 
-        c.datasets = list(model.Dataset.find())
+        c.datasets = list(model.dataset.find())
         c.dataset = None
-        self._detect_dataset_subdomain()
 
     def __after__(self):
         if session.get('state', {}) != c.state:
             session['state'] = c.state
             session.save()
 
-    def _detect_dataset_subdomain(self):
-        http_host = request.environ.get('HTTP_HOST').lower()
-        if http_host.startswith('www.'):
-            http_host = http_host[len('www.'):]
-        if not '.' in http_host:
-            return
-        dataset_name, domain = http_host.split('.', 1)
-        for dataset in c.datasets:
-            if dataset.name.lower() == dataset_name:
-                c.dataset = dataset
 

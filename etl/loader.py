@@ -10,7 +10,7 @@ from openspending.lib.util import check_rest_suffix, deep_get
 from openspending.logic.dimension import create_dimension
 from openspending import model
 from openspending import mongo
-from openspending.model import Dataset, Dimension, Entity
+from openspending.model import Dimension, Entity
 from openspending.ui.lib.views import View
 
 from openspending.etl import util
@@ -35,13 +35,12 @@ class Loader(object):
                  metadata=None, currency=u'gbp', time_axis='time.from.year',
                  changeset=None):
         """\
-        Constructs a Loader for the :class:`openspending.model.Dataset`
-        `dataset_name`. Calling the constructor creates or updates the
-        `Dataset` object with `dataset_name`, `label`, `description`,
-        `metadata` and `currency`. The Loader instance can only be used
-        to create ``entry`` objects with the same set of `unique_keys`. If you
-        need to create another type of ``entry`` objects instantiate another
-        ``Loader``.
+        Constructs a Loader for the ``dataset`` `dataset_name`. Calling the
+        constructor creates or updates the `dataset` object with
+        `dataset_name`, `label`, `description`, `metadata` and `currency`.
+        The Loader instance can only be used to create ``entry`` objects with
+        the same set of `unique_keys`. If you need to create another type of
+        ``entry`` objects instantiate another ``Loader``.
 
         ``dataset_name``
             The unique name for the dataset.
@@ -85,13 +84,13 @@ class Loader(object):
         if not len(unique_keys) > 0:
             raise LoaderSetupError("Must provide a non-empty set of unique keys!")
 
-        self.dataset = Dataset.find_one({'name': dataset_name})
+        self.dataset = model.dataset.find_one_by('name', dataset_name)
         self.new_dataset = not self.dataset
 
-        if not self.dataset:
-            self.new_dataset = True
-            self.dataset = Dataset(id=util.hash_values([dataset_name]),
-                                   name=dataset_name)
+        if self.new_dataset:
+            _id = model.dataset.create({'_id': util.hash_values([dataset_name]),
+                                        'name': dataset_name})
+            self.dataset = model.dataset.get(_id)
 
         metadata = metadata or {}
         metadata.update({
@@ -100,9 +99,11 @@ class Loader(object):
             "description": description,
             "time_axis": time_axis
         })
-        self.dataset.update(metadata)
-        self.dataset.save()
-        self.base_query = {"dataset._id": self.dataset.id}
+        model.dataset.update(self.dataset, {'$set': metadata})
+
+        # Update local dataset from database
+        self.dataset = model.dataset.get(self.dataset['_id'])
+        self.base_query = {"dataset._id": self.dataset['_id']}
 
         # caches
         self.entity_cache = {}
@@ -232,7 +233,7 @@ class Loader(object):
             if isinstance(obj, Entity):
                 self.entitify_entry(entry, obj, key)
 
-        entry_uniques = [self.dataset.name]
+        entry_uniques = [self.dataset['name']]
         entry_uniques.extend(self._entry_unique_values(entry))
         entry_id = util.hash_values(entry_uniques)
 
@@ -243,7 +244,7 @@ class Loader(object):
                 log.warn("Duplicate entry found for new dataset '%s'. This is "
                          "almost certainly not what you wanted. Are you sure "
                          "that your unique_keys are truly unique across the "
-                         "dataset? Unique keys: %s", self.dataset.name,
+                         "dataset? Unique keys: %s", self.dataset['name'],
                          self._entry_unique_values(entry))
             else:
                 log.debug("Updating extant entry '%s' with new data", entry_id)
@@ -258,7 +259,7 @@ class Loader(object):
             now = time.time()
             timediff = now - self.start_time
             self.start_time = now
-            log.debug("%s loaded %s in %0.2fs", self.dataset.name,
+            log.debug("%s loaded %s in %0.2fs", self.dataset['name'],
                       self.num_entries, timediff)
 
         return entry_id
@@ -360,7 +361,7 @@ class Loader(object):
         Raises: ``TypeError`` if one of the arguments is of the wrong
         type.
         """
-        create_dimension(self.dataset.name, key, label,
+        create_dimension(self.dataset['name'], key, label,
                          description=description, **kwargs)
 
     def classify_entry(self, entry, classifier, name):
@@ -430,9 +431,9 @@ class Loader(object):
                     breakdown, cuts=view_filters)
         view.apply_to(cls, add_filters)
         view.compute()
-        Dataset.c.update({'name': self.dataset.name},
-                         {'$set': {'cubes': self.dataset.get('cubes', {})}})
-        self.dataset = Dataset.by_id(self.dataset.name)
+        model.dataset.update(self.dataset,
+                             {'$set': {'cubes': self.dataset.get('cubes', {})}})
+        self.dataset = model.dataset.get(self.dataset['_id'])
         return view
 
     def compute_aggregates(self):
@@ -442,7 +443,7 @@ class Loader(object):
         to the database.
         """
         log.debug("updating distinct values...")
-        update_distincts(self.dataset.name)
+        update_distincts(self.dataset['name'])
         log.debug("updating all cubes...")
         Cube.update_all_cubes(self.dataset)
 

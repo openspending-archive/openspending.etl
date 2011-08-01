@@ -28,12 +28,12 @@ class CSVImporter(BaseImporter):
     def import_line(self, line):
         entry = {
             'provenance': {
-                "dataset": self.loader.dataset.name,
+                "dataset": self.loader.dataset['name'],
                 "source_file": self.source_file,
                 "line": self.line_number,
                 "timestamp": datetime.utcnow()
             },
-            "_csv_import_fp": "%s:%s:%d" % (self.loader.dataset.name,
+            "_csv_import_fp": "%s:%s:%d" % (self.loader.dataset['name'],
                                             self.source_file,
                                             self.line_number)
         }
