@@ -8,7 +8,13 @@ def ckan_import(package_name, **kwargs):
     importer = CKANImporter(package_name)
     importer.on_error = lambda e: log.warn(e)
 
-    importer.run(**kwargs)
+    opts = {
+        'max_errors': 500
+    }
+
+    opts.update(kwargs)
+
+    importer.run(**opts)
 
 def csv_import(resource_url, model_url, **kwargs):
     import urllib
