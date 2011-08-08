@@ -13,7 +13,7 @@ class LineImportError(ImporterError):
         self.exc = exc
 
     def __str__(self):
-        return "Column `%s': %s" % (self.field, str(self.exc))
+        return "Column `%s': %s" % (self.field, repr(self.exc))
 
 class CSVImporter(BaseImporter):
 
