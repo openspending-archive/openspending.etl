@@ -29,9 +29,13 @@ This works like this::
    'unparsed': '2011-03'}
 '''
 import calendar
+import re
 from datetime import datetime
 
-from openspending.etl.validation.entry import PLACEHOLDER
+from openspending.etl.validation.base import PLACEHOLDER
+
+class ParseError(Exception):
+    pass
 
 GRANULARITY = {
     "daily": "time.from.month",
@@ -144,6 +148,7 @@ def fill_date(date, fill_tuple, offset=1):
             date.append(fill_tuple[i - offset](*date[:i]))
     return date
 
+NOT_REALLY_ISO = re.compile(r"^(\d\d\d\d)(?=-(\d\d)(?=-(\d\d))?)?")
 
 def from_datestrings(date1, date2=None):
     '''convert a start date ``date1`` and a end date ``date2`` into
@@ -159,19 +164,26 @@ def from_datestrings(date1, date2=None):
     fill_start = (lambda y: 1, lambda y, m: 1)
     fill_end = (lambda y: 12, lambda y, m: calendar.monthrange(y, m)[1])
 
-    date_start = [int(x) for x in date1.split("-")]
+    date_start = _parse_date(date1)
     date_start = fill_date(date_start, fill_start)
     date_start = datetime(*date_start)
 
     if date2 is None:
-        date_end = [int(x) for x in date1.split("-")]
+        date_end = _parse_date(date1)
     else:
-        date_end = [int(x) for x in date2.split("-")]
+        date_end = _parse_date(date2)
     date_end = fill_date(date_end, fill_end)
     date_end = datetime(*date_end)
 
     return date_start, date_end
 
+def _parse_date(date_str):
+    parsed = NOT_REALLY_ISO.match(date_str)
+    if parsed is None:
+        raise ParseError("'%s' is not in a valid date format!" % date_str)
+    return [int(x) for x in parsed.groups() if x is not None]
+
 if __name__ == '__main__':
     print from_datestrings("2011-01", "2011-02")
     print from_datestrings("2011", "2012-02-03")
+    print from_datestrings("2011-01-12T00:00:00Z", "2012-02-03")

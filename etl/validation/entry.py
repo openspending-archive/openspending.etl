@@ -1,12 +1,10 @@
 import re
 
+from .. import times
 from .base import Mapping, Regex, SchemaNode, String, Invalid
-
-PLACEHOLDER = "(Empty)"
+from .base import PLACEHOLDER
 
 FLOAT_RE = re.compile(r"\-?\d[\d\,]*(\.[\d]*)?")
-DATE_RE = re.compile(r"^\d{4}(\-\d{1,2}(\-\d{1,2})?)?$")
-
 
 class StringOrPlaceholder(String):
 
@@ -35,10 +33,12 @@ def make_date_validator(dimension, is_end):
                 return
             msg = ('"time" (here "%s") has to be %s. The "end_column", if specified, '
                    'might be empty') % (value, msg_suffix)
-        if DATE_RE.match(value) is None:
+        try:
+            times.for_datestrings(value)
+        except times.ParseError:
             raise Invalid(node, msg)
-    return _validator
 
+    return _validator
 
 def make_validator(fields):
     seen = []
