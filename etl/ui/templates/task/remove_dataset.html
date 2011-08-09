@@ -17,9 +17,9 @@
       <ul>
         <li py:for="d in c.datasets">
           <a class="confirm"
-             title="Are you sure you want to IRREVERSIBLY REMOVE the '${d.name}' dataset?"
-             href="${h.url(controller='task', action='remove_dataset', dataset=d.name)}">
-            ${d.label}
+             title="Are you sure you want to IRREVERSIBLY REMOVE the '${d['name']}' dataset?"
+             href="${h.url(controller='task', action='remove_dataset', dataset=d['name'])}">
+            ${d['label']}
           </a>
         </li>
       </ul>

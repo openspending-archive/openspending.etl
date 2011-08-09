@@ -28,12 +28,12 @@ class CSVImporter(BaseImporter):
     def import_line(self, line):
         entry = {
             'provenance': {
-                "dataset": self.loader.dataset.name,
+                "dataset": self.loader.dataset['name'],
                 "source_file": self.source_file,
                 "line": self.line_number,
                 "timestamp": datetime.utcnow()
             },
-            "_csv_import_fp": "%s:%s:%d" % (self.loader.dataset.name,
+            "_csv_import_fp": "%s:%s:%d" % (self.loader.dataset['name'],
                                             self.source_file,
                                             self.line_number)
         }
@@ -42,7 +42,7 @@ class CSVImporter(BaseImporter):
             try:
                 self._load_cell(entry, line, dimension, description)
             except Exception as e:
-                raise LineImportError(dimension, e)
+                raise LineImportError(dimension, repr(e))
 
         self.loader.create_entry(**entry)
 
@@ -62,24 +62,22 @@ class CSVImporter(BaseImporter):
             dimension_value[fieldname] = self._convert_type(line, field)
 
         if 'name' in dimension_value:
-            name = dimension_value.pop('name')
+            name = dimension_value['name']
         else:
             name = dimension_value['label']
 
-        name = util.slugify(name)
+        dimension_value['name'] = util.slugify(name)
 
         if dimension_type == 'entity':
             match_keys = description.get('match_keys', ('name',))
-            entity = self.loader.create_entity(name,
+            entity = self.loader.create_entity(dimension_value.pop('name'),
                                                match_keys=match_keys,
                                                **dimension_value)
             self.loader.entitify_entry(entry, entity, dimension)
 
         elif dimension_type == 'classifier':
-            taxonomy = util.slugify(description.get('taxonomy'))
-            classifier = self.loader.create_classifier(name,
-                                                       taxonomy,
-                                                       **dimension_value)
+            dimension_value['taxonomy'] = util.slugify(description.get('taxonomy'))
+            classifier = self.loader.create_classifier(dimension_value)
             self.loader.classify_entry(entry, classifier, dimension)
 
     def _convert_type(self, line, description):

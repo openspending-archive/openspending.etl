@@ -1,6 +1,7 @@
 import time
 
 from openspending import model
+from openspending import mongo
 from openspending.etl.command import daemon
 from openspending.etl.ui.test import ControllerTestCase, url, helpers as h
 
@@ -10,8 +11,7 @@ class TestTaskController(ControllerTestCase):
     def test_drop_database(self, have_role_mock):
         have_role_mock.return_value = True
 
-        db = model.mongo.db()
-        db.test_collection.insert({"name": "test thingy"})
+        mongo.db.test_collection.insert({"name": "test thingy"})
 
         response = self.app.get(url(controller='task', action='drop_database'))
 
@@ -21,7 +21,7 @@ class TestTaskController(ControllerTestCase):
         while daemon.job_running('drop_database'):
             time.sleep(0.1)
 
-        h.assert_equal(db.collection_names(), ['system.js', 'system.indexes'])
+        h.assert_equal(mongo.db.collection_names(), ['system.js', 'system.indexes'])
 
 
     @h.patch('openspending.ui.lib.authz.have_role')
@@ -31,8 +31,7 @@ class TestTaskController(ControllerTestCase):
         datasets = ['one', 'two', 'three']
 
         for name in datasets:
-            ds = model.Dataset(name=name)
-            ds.save()
+            model.dataset.create({'name': name, 'label': "Test dataset %s" % name})
 
         response = self.app.get(url(controller='task', action='remove_dataset'))
 
@@ -45,8 +44,7 @@ class TestTaskController(ControllerTestCase):
     def test_remove_dataset(self, have_role_mock):
         have_role_mock.return_value = True
 
-        ds = model.Dataset(name='mydataset')
-        ds.save()
+        model.dataset.create({'name':'mydataset'})
 
         response = self.app.get(url(controller='task',
                                     action='remove_dataset',
@@ -58,6 +56,6 @@ class TestTaskController(ControllerTestCase):
         while daemon.job_running('remove_mydataset'):
             time.sleep(0.1)
 
-        res = model.Dataset.find_one({'name': 'mydataset'})
+        res = model.dataset.find_one_by('name', 'mydataset')
         h.assert_equal(res, None)
 

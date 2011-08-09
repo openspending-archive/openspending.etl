@@ -141,12 +141,11 @@ def main():
         _load_environment(configfile_path)
 
         try:
-            # Run task, passing leftover arguments
             t = tasks.__dict__[task]
         except KeyError:
             raise TaskNotFoundError("No task called '%s' exists in openspending.etl.tasks!" % task)
 
-        # Run the task!
+        # Run task, passing leftover arguments
         t(*args)
 
 def _load_environment(configfile_path):

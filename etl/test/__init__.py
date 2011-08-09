@@ -14,19 +14,14 @@ import os
 
 from paste.deploy import appconfig
 
+from openspending import mongo
 from helpers import clean_all
 
 __all__ = ['TestCase', 'DatabaseTestCase']
 
 here_dir = os.getcwd()
 config = appconfig('config:test.ini', relative_to=here_dir)
-
-import openspending.model as model
-
-# Clear everything before any tests are run.
-def setup_module():
-    model.init_mongo(config)
-    clean_all()
+mongo.configure(config)
 
 class TestCase(object):
     def setup(self):
@@ -53,7 +48,7 @@ class LoaderTestCase(DatabaseTestCase):
         return loader
 
     def _make_entry(self, loader, **kwargs):
-        from openspending.model import Entry
+        from openspending import model
 
         entry = {'name': 'Test Entry',
                  'amount': 1000.00,
@@ -66,8 +61,11 @@ class LoaderTestCase(DatabaseTestCase):
         if 'to' not in entry:
             entry['to'] = loader.create_entity(u'Test To Entity')
 
-        spec = loader.create_entry(**entry)
-        new = Entry.find_one(spec)
+        entry['from'] = model.entity.get_ref_dict(entry['from'])
+        entry['to'] = model.entity.get_ref_dict(entry['to'])
+
+        _id = loader.create_entry(**entry)
+        new = model.entry.get(_id)
         return new
 
     def _make_entity(self, loader, **kwargs):

@@ -6,13 +6,6 @@ from .base import PLACEHOLDER
 
 FLOAT_RE = re.compile(r"\-?\d[\d\,]*(\.[\d]*)?")
 
-class StringOrPlaceholder(String):
-
-    def deserialize(self, node, cstruct):
-        value = super(StringOrPlaceholder, self).deserialize(node, cstruct)
-        return value or PLACEHOLDER
-
-
 def make_date_validator(dimension, is_end):
     '''
     Factory for a context sensitive validator for dates.
@@ -35,7 +28,7 @@ def make_date_validator(dimension, is_end):
                    'might be empty') % (value, msg_suffix)
         try:
             times.for_datestrings(value)
-        except times.ParseError:
+        except (times.ParseError, ValueError):
             raise Invalid(node, msg)
 
     return _validator
@@ -71,7 +64,5 @@ def make_validator(fields):
                 )
             )
         else:
-            schema.add(SchemaNode(StringOrPlaceholder(),
-                                  name=field,
-                                  missing=PLACEHOLDER))
+            schema.add(SchemaNode(String(), name=field, missing=None))
     return schema
