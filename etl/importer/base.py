@@ -154,7 +154,7 @@ class BaseImporter(object):
         log.info("Generating aggregates and views")
         self.loader.flush_aggregates()
         for view in self.views:
-            entity_cls = model[view.get('entity')]
+            entity_cls = getattr(model, view.get('entity'))
             self.loader.create_view(
                 entity_cls,
                 view.get('filters', {}),
