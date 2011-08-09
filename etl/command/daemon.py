@@ -127,25 +127,26 @@ def main():
         raise AlreadyLocked("Can't start two jobs with id '%s'!" % job_id)
 
     with context:
+        # Configure logger
+        log = logging.getLogger('openspending.etl')
+        handler = logging.StreamHandler(sys.stderr)
+        handler.setFormatter(logging.Formatter(
+            '%(asctime)s %(levelname)s: %(message)s',
+            '%Y-%m-%d %H:%M:%S'
+        ))
+        log.addHandler(handler)
+        log.setLevel(logging.INFO)
+
+        # Load pylons environment from specified config file
+        _load_environment(configfile_path)
+
         try:
-            # Configure logger
-            log = logging.getLogger('openspending.etl')
-            handler = logging.StreamHandler(sys.stderr)
-            handler.setFormatter(logging.Formatter(
-                '%(asctime)s %(levelname)s: %(message)s',
-                '%Y-%m-%d %H:%M:%S'
-            ))
-            log.addHandler(handler)
-            log.setLevel(logging.INFO)
-
-            # Load pylons environment from specified config file
-            _load_environment(configfile_path)
-
-            # Run task, passing leftover arguments
-            tasks.__dict__[task](*args)
+            t = tasks.__dict__[task]
         except KeyError:
-            raise TaskNotFoundError("No task called '%s' exists in openspending.tasks!" % task)
+            raise TaskNotFoundError("No task called '%s' exists in openspending.etl.tasks!" % task)
 
+        # Run task, passing leftover arguments
+        t(*args)
 
 def _load_environment(configfile_path):
     conf = appconfig('config:' + configfile_path)
