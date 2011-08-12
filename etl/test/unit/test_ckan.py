@@ -1,4 +1,4 @@
-from openspending.lib import ckan
+from openspending.etl.importer import ckan
 from openspending.lib import json
 from openspending.etl.test import TestCase, helpers as h
 
@@ -7,7 +7,7 @@ MOCK_REGISTRY = json.load(h.fixture_file('mock_ckan.json'))
 class TestCkan(TestCase):
     def setup(self):
         super(TestCkan, self).setup()
-        self.patcher = h.patch('openspending.lib.ckan.CkanClient', spec=ckan.CkanClient)
+        self.patcher = h.patch('openspending.etl.importer.ckan.CkanClient', spec=ckan.CkanClient)
         self.MockCkanClient = self.patcher.start()
         ckan._client = None
         self.MockCkanClient.return_value = self.c = h.mock_ckan(MOCK_REGISTRY)

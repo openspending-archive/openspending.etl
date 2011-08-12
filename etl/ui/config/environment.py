@@ -87,7 +87,7 @@ def load_environment(global_conf, app_conf):
     mongo.configure(config)
 
     # Configure ckan
-    import openspending.lib.ckan as ckan
+    import openspending.etl.importer.ckan as ckan
     ckan.configure(config)
 
     # Configure Solr

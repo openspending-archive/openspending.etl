@@ -5,7 +5,7 @@ from pylons.decorators.cache import beaker_cache
 from pylons import url, config, request, tmpl_context as c
 from pylons.i18n import _
 
-from openspending.lib import ckan
+from openspending.etl.importer import ckan
 from openspending.ui.lib import helpers as h
 from openspending.ui.lib.authz import requires
 
