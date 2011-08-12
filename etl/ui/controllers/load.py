@@ -72,3 +72,5 @@ def _url_or_error_for_package(pkg, hint):
             return _("None set")
     except ckan.ResourceError as e:
         return "<span class='error-message'>%s</span>" % h.escape(e)
+
+

@@ -2,3 +2,4 @@
 /*.ini
 /.pylons_data
 *.egg-info
+*.pyc
