@@ -28,7 +28,7 @@ setup(
         "openspending"
     ],
     setup_requires=[
-        "PasteScript==1.7.3"
+        "PasteScript==1.7.4.1"
     ],
 
     packages=find_packages(PKG_ROOT),
