@@ -23,7 +23,7 @@ class CkanCommand(OpenSpendingETLCommand):
             CkanCommand.parser.print_help()
             return 1
 
-        from openspending.lib import ckan
+        from openspending.etl.importer import ckan
 
         self.c = ckan.get_client()
 
