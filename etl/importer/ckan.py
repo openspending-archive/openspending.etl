@@ -1,6 +1,5 @@
 from ckanclient import CkanClient, CkanApiError
 
-from openspending.lib import ckan
 from openspending.lib import json
 
 from openspending.etl import util
@@ -131,8 +130,8 @@ class CKANImporter(CSVImporter):
     def __init__(self, package,
                  model_url=None, mapping_url=None, resource_uuid=None):
 
-        if not isinstance(package, ckan.Package):
-            package = ckan.Package(package)
+        if not isinstance(package, Package):
+            package = Package(package)
 
         if resource_uuid:
             data = package.get_resource(resource_uuid)

@@ -48,7 +48,7 @@ class CkanCommand(OpenSpendingETLCommand):
         package_name = self.args[1]
 
         from pprint import pprint
-        from openspending.lib import ckan
+        from openspending.etl.importer import ckan
 
         pprint(self.c.package_entity_get(package_name))
 
@@ -57,7 +57,8 @@ class CkanCommand(OpenSpendingETLCommand):
             raise self.BadCommand("Usage: paster ckan check <pkgname>")
 
         package_name = self.args[1]
-        from openspending.lib import ckan, json
+        from openspending.etl.importer import ckan
+        from openspending.lib import json
 
         p = ckan.Package(package_name)
 

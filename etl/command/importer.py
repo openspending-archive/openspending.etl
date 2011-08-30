@@ -4,7 +4,7 @@ import sys
 import logging
 import urllib2
 
-from openspending.lib import ckan
+from openspending.etl.importer import ckan
 from openspending.lib import json
 
 from openspending.etl import util
