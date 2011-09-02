@@ -202,7 +202,10 @@ class BaseImporter(object):
             if not self.dry_run:
                 self.import_line(_line)
         except (Invalid, ImporterError) as e:
-            self.add_error(e)
+            if self.raise_errors:
+                raise
+            else:
+                self.add_error(e)
 
     def import_line(self, line):
         raise NotImplementedError("import_line not implemented in BaseImporter")
@@ -211,9 +214,6 @@ class BaseImporter(object):
         err = DataError(exception=exception,
                         line_number=self.line_number,
                         source_file=self.source_file)
-
-        if self.raise_errors:
-            raise err
 
         self.on_error(err)
         self.errors.append(err)

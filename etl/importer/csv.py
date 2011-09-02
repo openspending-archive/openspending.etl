@@ -42,7 +42,11 @@ class CSVImporter(BaseImporter):
             try:
                 self._load_cell(entry, line, dimension, description)
             except Exception as e:
-                raise LineImportError(dimension, repr(e))
+                if self.raise_errors:
+                    print(line)
+                    raise
+                else:
+                    raise LineImportError(dimension, repr(e))
 
         self.loader.create_entry(**entry)
 
