@@ -5,7 +5,42 @@
   <py:def function="nav_class">nav-load</py:def>
   <py:def function="page_title">Import diagnostics (${c.pkg['name']})</py:def>
 
+
+  <py:def function="resource_for_package(resname)">
+    <py:choose test="">
+      <py:when test="not c.pkg_diagnostics[resname]">
+        <dd class='ckan-choose-resource'
+          data-ckan-package="${c.pkg['name']}"
+          data-ckan-hint="${resname}"
+          data-ckan-prev-resource-id="">
+          None set
+        </dd>
+      </py:when>
+      <py:when test="'error' in c.pkg_diagnostics[resname]">
+        <dd class='ckan-choose-resource'
+            data-ckan-package="${c.pkg['name']}"
+            data-ckan-hint="${resname}"
+            data-ckan-prev-resource-id="">
+            <span class='error-message'>${c.pkg_diagnostics[resname]['error']}</span>
+        </dd>
+      </py:when>
+      <py:otherwise>
+        <dd class='ckan-choose-resource'
+            data-ckan-package="${c.pkg['name']}"
+            data-ckan-hint="${resname}"
+            data-ckan-prev-resource-id="${c.pkg_diagnostics[resname]['id']}">
+            <a href="${c.pkg_diagnostics[resname]['url']}">${c.pkg_diagnostics[resname]['url']}</a>
+        </dd>
+      </py:otherwise>
+    </py:choose>
+  </py:def>
+
   <div py:def="content" class="content">
+    <script>
+      OpenSpending._ckan_package_cache = {
+        '${c.pkg['name']}': ${c.pkg.to_json()}
+      }
+    </script>
     <h2>Import diagnostics</h2>
     <h3>${c.pkg['title']} (${c.pkg['name']})</h3>
 
@@ -25,11 +60,11 @@
 
     <dl>
       <dt><tt>model</tt> URL</dt>
-      <dd>${Markup(c.pkg_diagnostics['model'])}</dd>
+      ${resource_for_package('model')}
       <dt><tt>model:mapping</tt> URL</dt>
-      <dd>${Markup(c.pkg_diagnostics['model:mapping'])}</dd>
+      ${resource_for_package('model:mapping')}
       <dt><tt>data</tt> URL</dt>
-      <dd>${Markup(c.pkg_diagnostics['data'])}</dd>
+      ${resource_for_package('data')}
     </dl>
   </div>
 
