@@ -30,11 +30,10 @@ def make_client():
 def get_client():
     global _client
 
-    if _client:
-        return _client
-    else:
+    if not _client:
         _client = make_client()
-        return _client
+
+    return _client
 
 def openspending_packages():
     client = get_client()
