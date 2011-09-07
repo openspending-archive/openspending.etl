@@ -25,6 +25,7 @@ setup(
 
     install_requires=[
         "python-daemon==1.5.5",
+        "ckanclient==0.9",
         "openspending"
     ],
     setup_requires=[
