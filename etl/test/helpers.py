@@ -50,8 +50,14 @@ def mock_ckan(registry):
     def mock_package_entity_put(data):
         registry[data['name']] = data
 
+    def mock_package_search(*args, **kwargs):
+        res = mock_group_entity_get('openspending')
+        packages = map(lambda x: mock_package_entity_get(x), res['packages'])
+        return {'results': packages}
+
     ckan.group_entity_get = Mock(side_effect=mock_group_entity_get)
     ckan.package_entity_get = Mock(side_effect=mock_package_entity_get)
     ckan.package_entity_put = Mock(side_effect=mock_package_entity_put)
+    ckan.package_search = Mock(side_effect=mock_package_search)
 
     return ckan
