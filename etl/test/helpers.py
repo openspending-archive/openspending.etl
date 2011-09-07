@@ -47,7 +47,11 @@ def mock_ckan(registry):
     def mock_package_entity_get(name, *args, **kwargs):
         return registry[name]
 
+    def mock_package_entity_put(data):
+        registry[data['name']] = data
+
     ckan.group_entity_get = Mock(side_effect=mock_group_entity_get)
     ckan.package_entity_get = Mock(side_effect=mock_package_entity_get)
+    ckan.package_entity_put = Mock(side_effect=mock_package_entity_put)
 
     return ckan

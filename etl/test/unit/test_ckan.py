@@ -57,6 +57,22 @@ class TestCkan(TestCase):
         h.assert_equal(p('missingdata').is_importable(), False)
         h.assert_equal(p('withmapping').is_importable(), True)
 
+    def test_package_to_json(self):
+        p = ckan.Package('foo', from_dict={'name': 'foo', 'bar': 123})
+        h.assert_equal(p.to_json(), '{"bar": 123, "name": "foo"}')
+
+    def test_package_add_hint(self):
+        p = ckan.Package('foo')
+        p.add_hint('1', 'my_hint')
+        h.assert_equal(p.data['resources'][0]['openspending_hint'], 'my_hint')
+        h.assert_true(self.c.package_entity_put.called)
+
+    def test_package_remove_hint(self):
+        p = ckan.Package('bar')
+        p.remove_hint('123-model')
+        h.assert_equal(p.data['resources'][0]['openspending_hint'], '')
+        h.assert_true(self.c.package_entity_put.called)
+
     def test_metadata_for_resource(self):
         p = ckan.Package('bar')
         r = p['resources'][1]

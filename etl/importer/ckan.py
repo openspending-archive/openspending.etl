@@ -126,6 +126,19 @@ class Package(object):
 
         return ds
 
+    def to_json(self):
+        return json.dumps(self.data)
+
+    def add_hint(self, resource_uuid, hint):
+        r = self.get_resource(resource_uuid)
+        r['openspending_hint'] = hint
+
+        client = get_client()
+        client.package_entity_put(self.data)
+
+    def remove_hint(self, resource_uuid):
+        self.add_hint(resource_uuid, '')
+
 class CKANImporter(CSVImporter):
     def __init__(self, package,
                  model_url=None, mapping_url=None, resource_uuid=None):
