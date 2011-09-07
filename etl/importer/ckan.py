@@ -37,9 +37,13 @@ def get_client():
 
 def openspending_packages():
     client = get_client()
-    group = client.group_entity_get(openspending_group)
 
-    return [Package(name) for name in group.get('packages')]
+    resp = client.package_search('', {'groups': openspending_group,
+                                      'all_fields': '1',
+                                      'limit': 9999}) # Sorry, but the CKAN API doesn't
+                                                      # provide for anything more elegant...
+
+    return [Package(x['name'], from_dict=x) for x in resp['results']]
 
 class ResourceError(Exception):
     pass
@@ -51,9 +55,12 @@ class MissingResourceError(ResourceError):
     pass
 
 class Package(object):
-    def __init__(self, name):
-        client = get_client()
-        data = client.package_entity_get(name)
+    def __init__(self, name, from_dict=None):
+        if from_dict:
+            data = from_dict
+        else:
+            client = get_client()
+            data = client.package_entity_get(name)
         self.name = data['name']
         self.data = data
 

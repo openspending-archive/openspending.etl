@@ -33,6 +33,10 @@ class TestCkan(TestCase):
         p = ckan.Package('foo')
         h.assert_true(isinstance(p, ckan.Package))
 
+    def test_package_init_from_dict(self):
+        p = ckan.Package('foo', from_dict={'name': 'foo', 'bar': 123})
+        h.assert_equal(p.data, {'name': 'foo', 'bar': 123})
+
     def test_package_getitem(self):
         p = ckan.Package('foo')
         h.assert_equal(p['name'], 'foo')
