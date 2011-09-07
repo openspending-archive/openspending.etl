@@ -82,14 +82,15 @@ class TestCkan(TestCase):
         r = p['resources'][1]
         print p.metadata_for_resource(r)
         h.assert_equal(p.metadata_for_resource(r), {
-            'source_description': u'Some bar data', 
-            'description': u'Notes for bar', 
-            'temporal_granularity': 'year', 
-            u'ckan_url': u'http://ckan.net/package/bar', 
-            'source_url': u'http://example.com/bardata.csv', 
-            'currency': 'usd', 'source_format': u'text/csv', 
-            'source_id': u'456-data', 
-            'label': u'The Bar dataset', 
+            'source_description': u'Some bar data',
+            'description': u'Notes for bar',
+            'temporal_granularity': 'year',
+            u'ckan_url': u'http://ckan.net/package/bar',
+            'source_url': u'http://example.com/bardata.csv',
+            'currency': 'usd',
+            'source_format': u'text/csv',
+            'source_id': u'456-data',
+            'label': u'The Bar dataset',
             u'name': u'bar'
         })
 
