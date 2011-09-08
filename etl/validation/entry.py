@@ -1,10 +1,9 @@
 import re
 
 from .. import times
-from .base import Mapping, Regex, SchemaNode, String, Invalid
+from .base import Mapping, Regex, SchemaNode, String, Invalid, Function
 from .base import PLACEHOLDER
 
-FLOAT_RE = re.compile(r"\-?\d[\d\,]*(\.[\d]*)?")
 
 def make_date_validator(dimension, is_end):
     '''
@@ -33,6 +32,18 @@ def make_date_validator(dimension, is_end):
 
     return _validator
 
+NEW_FLOAT_RE = re.compile(r'^[0-9-\.,]+$')
+FLOAT_RE = re.compile(r"\-?\d*(\.[\d]*)?")
+
+def _validate_float(value):
+    if not NEW_FLOAT_RE.match(value):
+        return ("Numbers must only contain digits, periods, dashes and commas")
+    try:
+        val = float(value.replace(",",""))
+        return True
+    except:
+        return ("Could not coerce value into a number")
+
 def make_validator(fields):
     seen = []
     schema = SchemaNode(Mapping(unknown='ignore'))
@@ -52,7 +63,7 @@ def make_validator(fields):
                     String(),
                     name=field,
                     missing="0.0",
-                    validator=Regex(FLOAT_RE, msg="Numeric format invalid")
+                    validator=Function(_validate_float)
                 )
             )
         elif datatype == 'date':
