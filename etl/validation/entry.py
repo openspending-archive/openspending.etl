@@ -75,5 +75,5 @@ def make_validator(fields):
                 )
             )
         else:
-            schema.add(SchemaNode(String(), name=field, missing=None))
+            schema.add(SchemaNode(String(), name=field, missing=""))
     return schema
