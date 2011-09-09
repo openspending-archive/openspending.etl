@@ -32,11 +32,10 @@ def make_date_validator(dimension, is_end):
 
     return _validator
 
-NEW_FLOAT_RE = re.compile(r'^[0-9-\.,]+$')
-FLOAT_RE = re.compile(r"\-?\d*(\.[\d]*)?")
+FLOAT_RE = re.compile(r'^[0-9-\.,]+$')
 
 def _validate_float(value):
-    if not NEW_FLOAT_RE.match(value):
+    if not FLOAT_RE.match(value):
         return ("Numbers must only contain digits, periods, dashes and commas")
     try:
         val = float(value.replace(",",""))
