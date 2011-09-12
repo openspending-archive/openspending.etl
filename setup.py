@@ -25,10 +25,11 @@ setup(
 
     install_requires=[
         "python-daemon==1.5.5",
+        "ckanclient==0.9",
         "openspending"
     ],
     setup_requires=[
-        "PasteScript==1.7.3"
+        "PasteScript==1.7.4.2"
     ],
 
     packages=find_packages(PKG_ROOT),

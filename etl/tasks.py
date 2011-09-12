@@ -8,7 +8,13 @@ def ckan_import(package_name, **kwargs):
     importer = CKANImporter(package_name)
     importer.on_error = lambda e: log.warn(e)
 
-    importer.run(**kwargs)
+    opts = {
+        'max_errors': 500
+    }
+
+    opts.update(kwargs)
+
+    importer.run(**opts)
 
 def csv_import(resource_url, model_url, **kwargs):
     import urllib
@@ -25,8 +31,8 @@ def csv_import(resource_url, model_url, **kwargs):
 def remove_dataset(dataset_name):
     log.warn("Dropping dataset '%s'", dataset_name)
 
-    from openspending.model import mongo
-    db = mongo.db()
+    from openspending import mongo
+    db = mongo.db
 
     log.info("Removing entries")
     db.entry.remove({'dataset.name': dataset_name})
@@ -47,7 +53,7 @@ def remove_dataset(dataset_name):
     db.dataset.remove({'name': dataset_name})
 
 def drop_collections():
-    from openspending.model.mongo import drop_collections
+    from openspending.mongo import drop_collections
     log.info("Dropping all collections in database...")
     drop_collections()
     log.info("Done!")

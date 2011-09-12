@@ -4,13 +4,10 @@
       {
         "column": "paid_by",
         "datatype": "string",
-        "constant": "",
         "name": "label"
       }
     ],
-    "type": "entity",
-    "description": "",
-    "label": "y"
+    "type": "entity"
   },
   "to": {
     "fields": [
@@ -21,36 +18,32 @@
         "name": "label"
       }
     ],
-    "type": "entity",
-    "description": "",
-    "label": "y"
+    "type": "entity"
   },
   "currency": {
     "column": "currency",
     "datatype": "string",
-    "type": "value",
-    "description": "",
-    "label": "y"
+    "type": "value"
   },
   "amount": {
     "column": "amount",
     "datatype": "float",
-    "type": "value",
-    "description": "",
-    "label": "y"
+    "type": "value"
   },
   "time": {
     "column": "date",
     "datatype": "date",
-    "type": "value",
-    "description": "",
-    "label": "y"
+    "type": "value"
   },
  "additionaldate": {
     "column": "additional_date",
     "datatype": "date",
     "type": "value",
-    "description": "",
     "label": "Additional Date"
+  },
+  "id": {
+    "type": "value",
+    "column": "id",
+    "datatype": "string"
   }
 }

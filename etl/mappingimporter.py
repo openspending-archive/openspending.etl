@@ -98,8 +98,9 @@ class MappingFieldsConstructor(object):
                  'datatype': row[DATATYPE],
                  'type': row[OBJECTTYPE],
                  'label': row[LABEL],
-                 'description': row[DESCRIPTION],
-                 'default_value': row[DEFAULT_VALUE]}
+                 'description': row[DESCRIPTION]}
+        if row[DEFAULT_VALUE]:
+            field['default_value'] = row[DEFAULT_VALUE]
         self.fields[fieldname] = field
 
     def complex_field_names(self, raw_fieldname):
@@ -114,9 +115,9 @@ class MappingFieldsConstructor(object):
         objecttype = row[OBJECTTYPE]
         subfield = {'column': row[ORIGINAL_FIELD],
                     'datatype': row[DATATYPE],
-                    'constant': '',
-                    'name': subfieldname,
-                    'default_value': row[DEFAULT_VALUE]}
+                    'name': subfieldname}
+        if row[DEFAULT_VALUE]:
+            subfield['default_value'] = row[DEFAULT_VALUE]
         field = {'type': objecttype,
                  'label': row[LABEL],
                  'description': row[DESCRIPTION],

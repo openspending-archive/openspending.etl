@@ -3,19 +3,13 @@ import logging
 from unidecode import unidecode
 
 from openspending.lib import solr_util as solr
-from openspending.model import Dataset, Classifier, Entity
+from openspending import model
 
 from openspending.etl import times
 from openspending.etl.loader import Loader
 from openspending.etl.validation import Invalid
 from openspending.etl.validation.model import Model
 from openspending.etl.validation.entry import make_validator
-
-ENTITY_TYPES = {
-    "dataset": Dataset,
-    "entity": Entity,
-    "classifier": Classifier
-}
 
 log = logging.getLogger(__name__)
 
@@ -108,7 +102,7 @@ class BaseImporter(object):
         self.build_indices()
 
         if self.errors:
-            log.error("Finished import with %d errors:")
+            log.error("Finished import with %d errors:", len(self.errors))
             for err in self.errors:
                 log.error(" - %s", err)
         else:
@@ -160,9 +154,9 @@ class BaseImporter(object):
         log.info("Generating aggregates and views")
         self.loader.flush_aggregates()
         for view in self.views:
-            entity = ENTITY_TYPES.get(view.get('entity'))
+            entity_cls = getattr(model, view.get('entity'))
             self.loader.create_view(
-                entity,
+                entity_cls,
                 view.get('filters', {}),
                 name=view.get('name'),
                 label=view.get('label'),
@@ -208,18 +202,18 @@ class BaseImporter(object):
             if not self.dry_run:
                 self.import_line(_line)
         except (Invalid, ImporterError) as e:
-            self.add_error(e)
+            if self.raise_errors:
+                raise
+            else:
+                self.add_error(e)
 
     def import_line(self, line):
-        raise NotImplementedError("load_line not implemented in BaseImporter")
+        raise NotImplementedError("import_line not implemented in BaseImporter")
 
     def add_error(self, exception):
         err = DataError(exception=exception,
                         line_number=self.line_number,
                         source_file=self.source_file)
-
-        if self.raise_errors:
-            raise err
 
         self.on_error(err)
         self.errors.append(err)

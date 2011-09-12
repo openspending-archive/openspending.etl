@@ -9,7 +9,7 @@ from pylons import config
 import pylons
 from webhelpers import markdown
 
-from openspending.model import init_mongo
+from openspending import mongo
 from openspending.ui.lib import helpers
 
 from openspending.etl.ui.config.routing import make_map
@@ -84,10 +84,10 @@ def load_environment(global_conf, app_conf):
     config['pylons.app_globals'].genshi_loader = TemplateLoader(
         template_paths, auto_reload=True, callback=template_loaded)
 
-    init_mongo(config)
+    mongo.configure(config)
 
     # Configure ckan
-    import openspending.lib.ckan as ckan
+    import openspending.etl.importer.ckan as ckan
     ckan.configure(config)
 
     # Configure Solr

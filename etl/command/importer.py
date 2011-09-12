@@ -4,7 +4,7 @@ import sys
 import logging
 import urllib2
 
-from openspending.lib import ckan
+from openspending.etl.importer import ckan
 from openspending.lib import json
 
 from openspending.etl import util
@@ -99,12 +99,7 @@ class CSVImportCommand(ImportCommand):
         csv = util.urlopen_lines(csv_data_url)
         importer = CSVImporter(csv, model, csv_data_url)
 
-        try:
-            importer.run(**self.get_args())
-            return 0
-        except ImporterError as e:
-            log.error(e)
-            return 1
+        importer.run(**self.get_args())
 
 class CKANImportCommand(ImportCommand):
     summary = "Load a dataset from CKAN"
@@ -141,12 +136,7 @@ class CKANImportCommand(ImportCommand):
                                     self.options.mapping,
                                     self.options.resource)
 
-        try:
-            importer.run(**self.get_args())
-            return 0
-        except ImporterError as e:
-            log.error(e)
-            return 1
+        importer.run(**self.get_args())
 
 class ImportReportCommand(OpenSpendingETLCommand):
     summary = "Report on errors from all known datasets"

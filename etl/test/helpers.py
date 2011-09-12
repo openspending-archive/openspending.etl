@@ -1,5 +1,6 @@
 from openspending.test.helpers import *
 import pkg_resources as _pkg_resources
+from mock import Mock
 
 # Fixture helpers.
 #
@@ -24,3 +25,39 @@ def fixture_path(name):
 def fixture_listdir(name):
     """Return a directory listing for the named fixture."""
     return _pkg_resources.resource_listdir(__name__, _fixture_relpath(name))
+
+def mock_ckan(registry):
+    '''
+    Return a mock CKANClient that can be monkeypatched into the code while
+    testing.
+    '''
+    class MockCKANClient(object):
+        pass
+
+    ckan = MockCKANClient()
+
+    def mock_group_entity_get(name, *args, **kwargs):
+        def in_group(p):
+            return name in registry[p].get('groups', [])
+
+        packages = filter(in_group, registry.keys())
+
+        return {'packages': packages}
+
+    def mock_package_entity_get(name, *args, **kwargs):
+        return registry[name]
+
+    def mock_package_entity_put(data):
+        registry[data['name']] = data
+
+    def mock_package_search(*args, **kwargs):
+        res = mock_group_entity_get('openspending')
+        packages = map(lambda x: mock_package_entity_get(x), res['packages'])
+        return {'results': packages}
+
+    ckan.group_entity_get = Mock(side_effect=mock_group_entity_get)
+    ckan.package_entity_get = Mock(side_effect=mock_package_entity_get)
+    ckan.package_entity_put = Mock(side_effect=mock_package_entity_put)
+    ckan.package_search = Mock(side_effect=mock_package_search)
+
+    return ckan

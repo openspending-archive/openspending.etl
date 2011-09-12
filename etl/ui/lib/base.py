@@ -11,6 +11,7 @@ from pylons.controllers.util import abort, redirect
 from genshi.filters import HTMLFormFiller
 
 from openspending import model
+from openspending import mongo
 from openspending.etl.ui import i18n
 
 import logging
@@ -54,16 +55,14 @@ class BaseController(WSGIController):
         try:
             return WSGIController.__call__(self, environ, start_response)
         finally:
-            model.mongo.connection.end_request()
+            mongo.connection.end_request()
             log.debug("Request to %s took %sms" % (request.path,
                int((time() - begin) * 1000)))
 
     def __before__(self, action, **params):
-        #from pprint import pprint
-        #pprint(request.environ)
-        c.account_name = request.environ.get('REMOTE_USER', None)
-        if c.account_name:
-            c.account = model.Account.by_name(c.account_name)
+        account_name = request.environ.get('REMOTE_USER', None)
+        if account_name:
+            c.account = model.account.find_one_by('name', account_name)
         else:
             c.account = None
 
@@ -73,23 +72,12 @@ class BaseController(WSGIController):
         c.items_per_page = int(request.params.get('items_per_page', 20))
         c.state = session.get('state', {})
 
-        c.datasets = list(model.Dataset.find())
+        c.datasets = list(model.dataset.find())
         c.dataset = None
-        self._detect_dataset_subdomain()
 
     def __after__(self):
         if session.get('state', {}) != c.state:
             session['state'] = c.state
             session.save()
 
-    def _detect_dataset_subdomain(self):
-        http_host = request.environ.get('HTTP_HOST').lower()
-        if http_host.startswith('www.'):
-            http_host = http_host[len('www.'):]
-        if not '.' in http_host:
-            return
-        dataset_name, domain = http_host.split('.', 1)
-        for dataset in c.datasets:
-            if dataset.name.lower() == dataset_name:
-                c.dataset = dataset
 

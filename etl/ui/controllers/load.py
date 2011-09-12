@@ -5,7 +5,7 @@ from pylons.decorators.cache import beaker_cache
 from pylons import url, config, request, tmpl_context as c
 from pylons.i18n import _
 
-from openspending.lib import ckan
+from openspending.etl.importer import ckan
 from openspending.ui.lib import helpers as h
 from openspending.ui.lib.authz import requires
 
@@ -35,7 +35,7 @@ class LoadController(BaseController):
 
         c.pkg_diagnostics = {}
         for hint in ('model', 'model:mapping', 'data'):
-            c.pkg_diagnostics[hint] = _url_or_error_for_package(c.pkg, hint)
+            c.pkg_diagnostics[hint] = _resource_or_error_for_package(c.pkg, hint)
 
         return render('load/diagnose.html')
 
@@ -63,12 +63,10 @@ class LoadController(BaseController):
 def _job_id_for_package(name):
     return "import_%s" % name
 
-def _url_or_error_for_package(pkg, hint):
+def _resource_or_error_for_package(pkg, hint):
     try:
-        r = pkg.openspending_resource(hint)
-        if r:
-            return "<a href='%(url)s'>%(url)s</a>" % {"url": r["url"]}
-        else:
-            return _("None set")
+        return pkg.openspending_resource(hint)
     except ckan.ResourceError as e:
-        return "<span class='error-message'>%s</span>" % h.escape(e)
+        return {'error': h.escape(e)}
+
+

@@ -4,7 +4,6 @@
     "datatype": "string",
     "type": "value",
     "description": "Category that lets you organize budget allocations of federal programs and federalized spending by the executors of federal spending to achieve its objectives and goals, as well as non-programmable expenditure.",
-    "default_value": "",
     "label": "Budget Programme"
   },
   "function": {
@@ -12,7 +11,6 @@
     "datatype": "string",
     "type": "value",
     "description": "Identifies the actions that responsible carry out to fulfill the task imposed upon them by legal regulations.,\n",
-    "default_value": "",
     "label": "Function"
   },
   "budget_programme_type": {
@@ -20,7 +18,6 @@
     "datatype": "string",
     "type": "value",
     "description": "Classifier which groups budgetary programs by: federal expenditure, federalized expenditure and non-programme related spending.",
-    "default_value": "",
     "label": "Budget Programme Type"
   },
   "from": {
@@ -28,7 +25,6 @@
       {
         "column": "FROM",
         "datatype": "string",
-        "constant": "",
         "default_value": "Government",
         "name": "label"
       }
@@ -50,7 +46,6 @@
     "datatype": "string",
     "type": "value",
     "description": "Administrative unit within an institution entrusted with the execution of a program, subprogram or project and its corresponding budget.",
-    "default_value": "",
     "label": "Administrative Unit"
   },
   "subfunction": {
@@ -58,7 +53,6 @@
     "datatype": "string",
     "type": "value",
     "description": "Breakdown of the function that identifies more accurately the activities of the agencies.",
-    "default_value": "",
     "label": "Subfunction"
   },
   "functional_group": {
@@ -66,7 +60,6 @@
     "datatype": "string",
     "type": "value",
     "description": "Identifies the activities of the State to achieve its goals, in accordance with the Constitution of the United Mexican States and its laws and regulations. There are three major functional groups of programmable expenditure: Government, Social Development and Economic Development. In addition, Other includes the group of non-programmable expenditure.",
-    "default_value": "",
     "label": "Functional Group"
   },
   "expenditure_type": {
@@ -74,7 +67,6 @@
     "datatype": "string",
     "type": "value",
     "description": "Budget allocation according to their nature, current or capital expenditures, and investments.",
-    "default_value": "",
     "label": "Expenditure Type"
   },
   "financial_source": {
@@ -82,7 +74,6 @@
     "datatype": "string",
     "type": "value",
     "description": "Allocations identified by source of their funding: tax revenue, expenditure financed by the IDB-IBRD and other external funding, national counterpart, and own revenues.",
-    "default_value": "",
     "label": "Financial Source"
   },
   "to": {
@@ -90,7 +81,6 @@
       {
         "column": "TO",
         "datatype": "string",
-        "constant": "",
         "default_value": "Society",
         "name": "label"
       }
@@ -104,7 +94,6 @@
     "datatype": "float",
     "type": "value",
     "description": "Amount approved in the budget.",
-    "default_value": "",
     "label": ""
   },
   "expenditure_object": {
@@ -112,7 +101,6 @@
     "datatype": "string",
     "type": "value",
     "description": "Inputs by way of human, material and financial resources (goods and services) that the agencies use to carry out regular operations and the resources the Federal Government transfers to private and social sectors.",
-    "default_value": "",
     "label": "Expenditure Object"
   },
   "budget_programme_identifier": {
@@ -120,7 +108,6 @@
     "datatype": "string",
     "type": "value",
     "description": "Identifier that classifies the budget programs according to the types and modalities with a greater desagregation.",
-    "default_value": "",
     "label": "Budget Programme Identifier"
   },
   "institutional_activity": {
@@ -128,7 +115,6 @@
     "datatype": "string",
     "type": "value",
     "description": "Set actions that the agencies perform or suppor, through the responsible units, in order to fulfill the objectives and goals contained in the programs, in accordance with their responsibilities.",
-    "default_value": "",
     "label": "Institutional Activity"
   },
   "budget_account": {
@@ -136,7 +122,6 @@
     "datatype": "string",
     "type": "value",
     "description": "Grouping used to identify and classify federal government spending according to the administrative departments of the Executive power, the Legislative and Judicial powers, or other general classification.",
-    "default_value": "",
     "label": "Budget Account"
   },
   "budget_programme_group": {
@@ -144,7 +129,13 @@
     "datatype": "string",
     "type": "value",
     "description": "Identifier that classifies the budget programs according to the types and modalities.",
-    "default_value": "",
     "label": "Budget Programme Group"
+  },
+  "id": {
+    "column": "id",
+    "datatype": "string",
+    "type": "value",
+    "label": "Transaction ID",
+    "description": ""
   }
 }

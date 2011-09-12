@@ -3,6 +3,7 @@ from __future__ import print_function
 import sys
 
 from openspending.etl.command.base import OpenSpendingETLCommand
+from openspending.etl.importer import ckan
 
 class CkanCommand(OpenSpendingETLCommand):
     summary = "Interface to OpenSpending-specific CKAN operations"
@@ -22,8 +23,6 @@ class CkanCommand(OpenSpendingETLCommand):
         if len(self.args) < 2:
             CkanCommand.parser.print_help()
             return 1
-
-        from openspending.lib import ckan
 
         self.c = ckan.get_client()
 
@@ -48,7 +47,6 @@ class CkanCommand(OpenSpendingETLCommand):
         package_name = self.args[1]
 
         from pprint import pprint
-        from openspending.lib import ckan
 
         pprint(self.c.package_entity_get(package_name))
 
@@ -57,7 +55,7 @@ class CkanCommand(OpenSpendingETLCommand):
             raise self.BadCommand("Usage: paster ckan check <pkgname>")
 
         package_name = self.args[1]
-        from openspending.lib import ckan, json
+        from openspending.lib import json
 
         p = ckan.Package(package_name)
 
@@ -88,20 +86,15 @@ class CkanCommand(OpenSpendingETLCommand):
         resource_uuid = self.args[2]
         hint = self.args[3]
 
-        p = self.c.package_entity_get(package_name)
+        p = ckan.Package(package_name)
 
-        self.found_resource = False
+        print("Adding hint on %s of %s ('%s')..."
+              % (resource_uuid, package_name, hint),
+              file=sys.stderr)
 
-        for r in p['resources']:
-            if r['id'] == resource_uuid:
-                self.found_resource = True
-                print("Adding hint on %s of %s ('%s')..."
-                      % (resource_uuid, package_name, hint),
-                      file=sys.stderr)
-                r['openspending_hint'] = hint
-                break
+        p.add_hint(resource_uuid, hint)
 
-        self._save_and_finish(p)
+        print("Done!", file=sys.stderr)
 
     def _cmd_hintrm(self):
         if len(self.args) != 3:
@@ -110,28 +103,12 @@ class CkanCommand(OpenSpendingETLCommand):
         package_name = self.args[1]
         resource_uuid = self.args[2]
 
-        p = self.c.package_entity_get(package_name)
+        p = ckan.Package(package_name)
 
-        self.found_resource = False
+        print("Removing hint from %s of %s..."
+              % (resource_uuid, package_name),
+              file=sys.stderr)
 
-        for r in p['resources']:
-            if r['id'] == resource_uuid:
-                self.found_resource = True
-                print("Removing hint from %s of %s..."
-                      % (resource_uuid, package_name),
-                      file=sys.stderr)
-                # There's no way to delete extras, so just set to the empty string.
-                r['openspending_hint'] = ''
-                break
+        p.remove_hint(resource_uuid)
 
-        self._save_and_finish(p)
-
-
-    def _save_and_finish(self, pkg):
-        if self.found_resource:
-            self.c.package_entity_put(pkg)
-            print("Done!", file=sys.stderr)
-            return 0
-        else:
-            print("Couldn't find resource!", file=sys.stderr)
-            return 1
+        print("Done!", file=sys.stderr)

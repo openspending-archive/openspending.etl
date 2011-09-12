@@ -1,9 +1,10 @@
-from pylons import config, url, tmpl_context as c
+from pylons import config, url, request, tmpl_context as c
 
 from openspending import model
 from openspending.ui.lib import authz
 
 from openspending.etl.command import daemon
+from openspending.etl.importer import ckan
 from openspending.etl.ui.lib.base import BaseController, render, redirect
 
 class TaskController(BaseController):
@@ -26,7 +27,7 @@ class TaskController(BaseController):
     @authz.requires('admin')
     def remove_dataset(self, dataset=None):
         if dataset is None:
-            c.datasets = model.Dataset.find()
+            c.datasets = model.dataset.find()
             return render('task/remove_dataset.html')
 
         c.job_id = 'remove_%s' % dataset
@@ -42,3 +43,18 @@ class TaskController(BaseController):
             args=(dataset,)
         )
         return redirect(url(controller='job', action='status', job_id=c.job_id))
+
+    def add_hint(self):
+        pkg = request.params['pkg']
+        resource_id = request.params['resource_id']
+        prev_resource_id = request.params['prev_resource_id']
+        hint = request.params['hint']
+
+        p = ckan.Package(pkg)
+
+        if prev_resource_id != '' and prev_resource_id != resource_id:
+            p.remove_hint(prev_resource_id)
+
+        p.add_hint(resource_id, hint)
+
+        redirect(url(request.referer))

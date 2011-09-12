@@ -53,6 +53,7 @@ class PIDLockFileZeroTimeout(PIDLockFile):
         kwargs.update({'timeout': 0})
         super(PIDLockFileZeroTimeout, self).acquire(*args, **kwargs)
 
+
 def logfile_path(job_id):
     """Return path to log file for job <job_id>"""
     return os.path.join(sys.prefix, 'var', 'log', 'openspendingetld_%s.log' % job_id)
@@ -75,10 +76,14 @@ def dispatch_job(job_id, config, task, args=None):
     if args is None:
         args = ()
 
-    cmd = ['openspendingetld', job_id, config, task]
+    bin = os.path.join(sys.prefix, 'bin', 'openspendingetld')
+    cmd = [bin, job_id, config, task]
     cmd.extend(args)
 
-    return subprocess.check_output(cmd)
+    try: # python >= 2.7
+        return subprocess.check_output(cmd)
+    except AttributeError:
+        return _check_output(cmd)
 
 def job_log(job_id):
     """Return contents of log for job <job_id>"""
@@ -122,25 +127,26 @@ def main():
         raise AlreadyLocked("Can't start two jobs with id '%s'!" % job_id)
 
     with context:
+        # Configure logger
+        log = logging.getLogger('openspending.etl')
+        handler = logging.StreamHandler(sys.stderr)
+        handler.setFormatter(logging.Formatter(
+            '%(asctime)s %(levelname)s: %(message)s',
+            '%Y-%m-%d %H:%M:%S'
+        ))
+        log.addHandler(handler)
+        log.setLevel(logging.INFO)
+
+        # Load pylons environment from specified config file
+        _load_environment(configfile_path)
+
         try:
-            # Configure logger
-            log = logging.getLogger('openspending.etl')
-            handler = logging.StreamHandler(sys.stderr)
-            handler.setFormatter(logging.Formatter(
-                '%(asctime)s %(levelname)s: %(message)s',
-                '%Y-%m-%d %H:%M:%S'
-            ))
-            log.addHandler(handler)
-            log.setLevel(logging.INFO)
-
-            # Load pylons environment from specified config file
-            _load_environment(configfile_path)
-
-            # Run task, passing leftover arguments
-            tasks.__dict__[task](*args)
+            t = tasks.__dict__[task]
         except KeyError:
-            raise TaskNotFoundError("No task called '%s' exists in openspending.tasks!" % task)
+            raise TaskNotFoundError("No task called '%s' exists in openspending.etl.tasks!" % task)
 
+        # Run task, passing leftover arguments
+        t(*args)
 
 def _load_environment(configfile_path):
     conf = appconfig('config:' + configfile_path)
@@ -154,6 +160,41 @@ def _create_directories():
     for d in (var, run, log):
         if not os.path.isdir(d):
             os.mkdir(d)
+
+# Copied from python 2.7's subprocess.py
+def _check_output(*popenargs, **kwargs):
+    r"""Run command with arguments and return its output as a byte string.
+
+    If the exit code was non-zero it raises a CalledProcessError.  The
+    CalledProcessError object will have the return code in the returncode
+    attribute and output in the output attribute.
+
+    The arguments are the same as for the Popen constructor.  Example:
+
+    >>> check_output(["ls", "-l", "/dev/null"])
+    'crw-rw-rw- 1 root root 1, 3 Oct 18  2007 /dev/null\n'
+
+    The stdout argument is not allowed as it is used internally.
+    To capture standard error in the result, use stderr=STDOUT.
+
+    >>> check_output(["/bin/sh", "-c",
+    ...               "ls -l non_existent_file ; exit 0"],
+    ...              stderr=STDOUT)
+    'ls: non_existent_file: No such file or directory\n'
+    """
+    if 'stdout' in kwargs:
+        raise ValueError('stdout argument not allowed, it will be overridden.')
+    process = subprocess.Popen(stdout=subprocess.PIPE, *popenargs, **kwargs)
+    output, unused_err = process.communicate()
+    retcode = process.poll()
+    if retcode:
+        cmd = kwargs.get("args")
+        if cmd is None:
+            cmd = popenargs[0]
+        err = subprocess.CalledProcessError(retcode, cmd)
+        err.output = output
+        raise err
+    return output
 
 if __name__ == '__main__':
     main()

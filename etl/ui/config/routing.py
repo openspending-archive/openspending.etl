@@ -22,6 +22,7 @@ def make_map():
 
     map.connect('/', controller='home', action='index')
 
+    map.connect('/task/add_hint', controller='task', action='add_hint')
     map.connect('/task/drop_database', controller='task', action='drop_database')
     map.connect('/task/remove_dataset', controller='task', action='remove_dataset')
     map.connect('/task/remove_dataset/{dataset}', controller='task', action='remove_dataset')

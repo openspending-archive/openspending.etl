@@ -1,18 +1,8 @@
 import re
 
-from .base import Mapping, Regex, SchemaNode, String, Invalid
-
-PLACEHOLDER = "(Empty)"
-
-FLOAT_RE = re.compile(r"\-?\d[\d\,]*(\.[\d]*)?")
-DATE_RE = re.compile(r"^\d{4}(\-\d{1,2}(\-\d{1,2})?)?$")
-
-
-class StringOrPlaceholder(String):
-
-    def deserialize(self, node, cstruct):
-        value = super(StringOrPlaceholder, self).deserialize(node, cstruct)
-        return value or PLACEHOLDER
+from .. import times
+from .base import Mapping, Regex, SchemaNode, String, Invalid, Function
+from .base import PLACEHOLDER
 
 
 def make_date_validator(dimension, is_end):
@@ -35,10 +25,23 @@ def make_date_validator(dimension, is_end):
                 return
             msg = ('"time" (here "%s") has to be %s. The "end_column", if specified, '
                    'might be empty') % (value, msg_suffix)
-        if DATE_RE.match(value) is None:
+        try:
+            times.for_datestrings(value)
+        except (times.ParseError, ValueError):
             raise Invalid(node, msg)
+
     return _validator
 
+FLOAT_RE = re.compile(r'^[0-9-\.,]+$')
+
+def _validate_float(value):
+    if not FLOAT_RE.match(value):
+        return ("Numbers must only contain digits, periods, dashes and commas")
+    try:
+        val = float(value.replace(",",""))
+        return True
+    except:
+        return ("Could not coerce value into a number")
 
 def make_validator(fields):
     seen = []
@@ -59,7 +62,7 @@ def make_validator(fields):
                     String(),
                     name=field,
                     missing="0.0",
-                    validator=Regex(FLOAT_RE, msg="Numeric format invalid")
+                    validator=Function(_validate_float)
                 )
             )
         elif datatype == 'date':
@@ -71,7 +74,5 @@ def make_validator(fields):
                 )
             )
         else:
-            schema.add(SchemaNode(StringOrPlaceholder(),
-                                  name=field,
-                                  missing=PLACEHOLDER))
+            schema.add(SchemaNode(String(), name=field, missing=""))
     return schema
