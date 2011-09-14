@@ -48,6 +48,18 @@ class TestCSVImporter(DatabaseTestCase):
                       "Entry with name could not be found")
         h.assert_equal(entry['amount'], 130000.0)
 
+    def test_no_dimensions_for_measures(self):
+        data, dmodel = csvimport_fixture('simple')
+        importer = CSVImporter(data, dmodel)
+        importer.run()
+        dataset = model.dataset.find_one()
+
+        dimensions = [c['key']
+                      for c
+                      in model.dimension.find()]
+
+        h.assert_equal(sorted(dimensions), ['from', 'to'])
+
     def test_successful_import_with_simple_testdata(self):
         data, dmodel = csvimport_fixture('simple')
         importer = CSVImporter(data, dmodel)
