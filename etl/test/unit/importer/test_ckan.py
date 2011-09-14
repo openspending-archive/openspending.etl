@@ -2,32 +2,42 @@ from openspending.etl.importer import ckan
 from openspending.lib import json
 from openspending.etl.test import TestCase, helpers as h
 
-MOCK_REGISTRY = json.load(h.fixture_file('mock_ckan.json'))
+current_mock_ckan = None
+
+def make_mock_ckan(*args, **kwargs):
+    global current_mock_ckan
+    current_mock_ckan = h.mock_ckan(json.load(h.fixture_file('mock_ckan.json')))
+    return current_mock_ckan
 
 class TestCkan(TestCase):
     def setup(self):
+        global current_mock_ckan
         super(TestCkan, self).setup()
+
+        current_mock_ckan = None
+        ckan._client = None
+
         self.patcher = h.patch('openspending.etl.importer.ckan.CkanClient', spec=ckan.CkanClient)
         self.MockCkanClient = self.patcher.start()
-        ckan._client = None
-        self.MockCkanClient.return_value = self.c = h.mock_ckan(MOCK_REGISTRY)
+        self.MockCkanClient.side_effect = make_mock_ckan
 
     def teardown(self):
         self.patcher.stop()
         super(TestCkan, self).teardown()
 
     def test_make_client(self):
-        h.assert_equal(ckan.make_client(), self.c)
+        h.assert_equal(ckan.make_client(), current_mock_ckan)
 
+        self.MockCkanClient.side_effect = None
         self.MockCkanClient.return_value = None
         h.assert_equal(ckan.make_client(), None)
 
     def test_get_client(self):
-        h.assert_equal(ckan.get_client(), self.c)
+        h.assert_equal(ckan.get_client(), current_mock_ckan)
 
         # singleton now created, so this should have no effect.
         self.MockCkanClient.return_value = None
-        h.assert_equal(ckan.get_client(), self.c)
+        h.assert_equal(ckan.get_client(), current_mock_ckan)
 
     def test_package_init(self):
         p = ckan.Package('foo')
@@ -69,18 +79,17 @@ class TestCkan(TestCase):
         p = ckan.Package('foo')
         p.add_hint('1', 'my_hint')
         h.assert_equal(p.data['resources'][0]['openspending_hint'], 'my_hint')
-        h.assert_true(self.c.package_entity_put.called)
+        h.assert_true(current_mock_ckan.package_entity_put.called)
 
     def test_package_remove_hint(self):
         p = ckan.Package('bar')
         p.remove_hint('123-model')
         h.assert_equal(p.data['resources'][0]['openspending_hint'], '')
-        h.assert_true(self.c.package_entity_put.called)
+        h.assert_true(current_mock_ckan.package_entity_put.called)
 
     def test_metadata_for_resource(self):
         p = ckan.Package('bar')
         r = p['resources'][1]
-        print p.metadata_for_resource(r)
         h.assert_equal(p.metadata_for_resource(r), {
             'source_description': u'Some bar data',
             'description': u'Notes for bar',
