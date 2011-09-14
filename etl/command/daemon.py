@@ -41,7 +41,6 @@ from paste.deploy import appconfig
 from openspending.etl import tasks
 from openspending.etl.ui.config.environment import load_environment
 
-
 class TaskNotFoundError(Exception):
     pass
 
@@ -98,20 +97,21 @@ def main():
               file=sys.stderr)
         sys.exit(1)
 
-    # No two jobs with the same job_id can run at the same time
-    job_id = args.pop(0)
-    configfile_path = os.path.abspath(args.pop(0))
-    task = args.pop(0)
+    run_job(*args)
+
+def run_job(job_id, configfile, task, *args):
+    configfile_path = os.path.abspath(configfile)
 
     _create_directories()
 
-    pidfile = PIDLockFile(pidfile_path(job_id))
+    pidfile = PIDLockFileZeroTimeout(pidfile_path(job_id))
 
     context = DaemonContext(
         stdout=open(logfile_path(job_id), 'w+'),
         stderr=open(logfile_path(job_id), 'w+', buffering=0),
         pidfile=pidfile
     )
+
 
     # NB: There *is* a possible race condition here, if a job with the same
     # name is able to start between this job calling is_locked() below, and
