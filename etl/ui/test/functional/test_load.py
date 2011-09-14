@@ -1,3 +1,5 @@
+from pylons import config
+
 from openspending.etl.importer import ckan
 from openspending.lib import json
 from openspending.etl.command import daemon
@@ -61,7 +63,8 @@ class TestLoadController(ControllerTestCase):
             "No warning about ambiguous resources in response!"
 
     @h.patch('openspending.ui.lib.authz.have_role')
-    def test_start(self, have_role_mock):
+    @h.patch('openspending.etl.command.daemon.dispatch_job')
+    def test_start(self, dispatch_job_mock, have_role_mock):
         have_role_mock.return_value = True # Pretend to be admin user.
 
         response = self.app.get(url(controller='load',
@@ -73,5 +76,7 @@ class TestLoadController(ControllerTestCase):
         assert response.headers['Location'].endswith(status_path), \
             "LoadController start action didn't redirect to status page."
 
-        assert daemon.job_running('import_bar'), \
-            "LoadController start action didn't start the import_bar job!"
+        dispatch_job_mock.assert_called_once_with(job_id='import_bar',
+                                                  config=config['__file__'],
+                                                  task='ckan_import',
+                                                  args=('bar',))
