@@ -1,12 +1,34 @@
+import os
 import sys
+import tempfile
 import time
 from StringIO import StringIO
 
-# import daemon as daemon_lib
 from pylons import config
 
 from openspending.etl.test import TestCase, helpers as h
 from openspending.etl.command import daemon
+
+class TestPIDLockFileZeroTimeout(TestCase):
+    # Ensure we've curried the timeout correctly
+    def test_lockfile_times_out_immediately(self):
+        pidfile = tempfile.NamedTemporaryFile()
+        pidfile_path = pidfile.name
+        pidfile.close()
+
+        start = time.time()
+        p = daemon.PIDLockFileZeroTimeout(pidfile_path)
+        p.acquire()
+        try:
+            p.acquire()
+        except daemon.AlreadyLocked:
+            pass
+        end = time.time()
+
+        h.assert_less(end - start, 1.0)
+
+        p.release()
+
 
 class TestDaemon(TestCase):
     def setup(self):
