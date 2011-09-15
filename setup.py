@@ -58,14 +58,6 @@ setup(
         'paste.app_install': [
             'main = pylons.util:PylonsInstaller'
         ],
-        'paste.paster_command': [
-            'csvimport = openspending.etl.command:CSVImportCommand',
-            'ckanimport = openspending.etl.command:CKANImportCommand',
-            'mappingconvert = openspending.etl.command:MappingConvertCommand',
-            'mappingurl = openspending.etl.command:MappingUrlCommand',
-            'importreport = openspending.etl.command:ImportReportCommand',
-            'ckan = openspending.etl.command:CkanCommand'
-        ],
         'console_scripts': [
             'openspendingetld = openspending.etl.command.daemon:main'
         ]

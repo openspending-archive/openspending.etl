@@ -75,7 +75,8 @@ class BaseImporter(object):
             max_errors=None,
             max_lines=None,
             raise_errors=False,
-            build_indices=True):
+            build_indices=True,
+            **kwargs):
 
         self.dry_run = dry_run
         self.max_errors = max_errors
