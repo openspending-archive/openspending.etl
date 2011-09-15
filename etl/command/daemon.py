@@ -50,7 +50,7 @@ class PIDLockFileZeroTimeout(PIDLockFile):
 
     def acquire(self, *args, **kwargs):
         kwargs.update({'timeout': 0})
-        super(PIDLockFileZeroTimeout, self).acquire(*args, **kwargs)
+        PIDLockFile.acquire(self, *args, **kwargs)
 
 
 def logfile_path(job_id):
