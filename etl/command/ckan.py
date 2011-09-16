@@ -1,114 +1,94 @@
 from __future__ import print_function
 
+from pprint import pprint
 import sys
 
-from openspending.etl.command.base import OpenSpendingETLCommand
+from openspending.lib import json
 from openspending.etl.importer import ckan
 
-class CkanCommand(OpenSpendingETLCommand):
-    summary = "Interface to OpenSpending-specific CKAN operations"
-    usage = "<subcommand> [args, ...]"
-    description = """\
-                  Recognized subcommands:
-                    show <pkgname>:                     Pretty-print package.
-                    hintadd <pkgname> <uuid> <hint>:    Add hint on resource by UUID.
-                    hintrm <pkgname> <uuid>:            Remove any hint on resource by UUID.
-                  """
+def show(package_name):
+    pprint(ckan.get_client().package_entity_get(package_name))
+    return 0
 
-    parser = OpenSpendingETLCommand.standard_parser()
+def check(package_name):
+    p = ckan.Package(package_name)
 
-    def command(self):
-        super(CkanCommand, self).command()
+    def _get_url_or_error(resource_name):
+        try:
+            r = p.openspending_resource(resource_name)
+            if r:
+                return r["url"]
+            else:
+                return r
+        except ckan.ResourceError as e:
+            return str(e)
 
-        if len(self.args) < 2:
-            CkanCommand.parser.print_help()
-            return 1
+    res = {
+        "is_importable": p.is_importable(),
+        "data": _get_url_or_error('data'),
+        "model": _get_url_or_error('model'),
+        "model:mapping": _get_url_or_error('model:mapping')
+    }
 
-        self.c = ckan.get_client()
+    print(json.dumps(res, indent=2, sort_keys=True))
+    return 0
 
-        cmd = self.args[0]
+def hintadd(package_name, resource_uuid, hint):
+    p = ckan.Package(package_name)
 
-        if cmd == 'show':
-            self._cmd_show()
-        elif cmd == 'check':
-            self._cmd_check()
-        elif cmd == 'hintadd':
-            self._cmd_hintadd()
-        elif cmd == 'hintrm':
-            self._cmd_hintrm()
-        else:
-            raise self.BadCommand("Subcommand '%s' not recognized " \
-                                  "by 'ckan' command!" % cmd)
+    print("Adding hint on %s of %s ('%s')..."
+          % (resource_uuid, package_name, hint),
+          file=sys.stderr)
 
-    def _cmd_show(self):
-        if len(self.args) != 2:
-            raise self.BadCommand("Usage: paster ckan show <pkgname>")
+    p.add_hint(resource_uuid, hint)
 
-        package_name = self.args[1]
+    print("Done!", file=sys.stderr)
+    return 0
 
-        from pprint import pprint
+def hintrm(package_name, resource_uuid):
+    p = ckan.Package(package_name)
 
-        pprint(self.c.package_entity_get(package_name))
+    print("Removing hint from %s of %s..."
+          % (resource_uuid, package_name),
+          file=sys.stderr)
 
-    def _cmd_check(self):
-        if len(self.args) != 2:
-            raise self.BadCommand("Usage: paster ckan check <pkgname>")
+    p.remove_hint(resource_uuid)
 
-        package_name = self.args[1]
-        from openspending.lib import json
+    print("Done!", file=sys.stderr)
+    return 0
 
-        p = ckan.Package(package_name)
+def _show(args):
+    return show(args.pkgname)
 
-        def _get_url_or_error(resource_name):
-            try:
-                r = p.openspending_resource(resource_name)
-                if r:
-                    return r["url"]
-                else:
-                    return r
-            except ckan.ResourceError as e:
-                return str(e)
+def _check(args):
+    return check(args.pkgname)
 
-        res = {
-            "is_importable": p.is_importable(),
-            "data": _get_url_or_error('data'),
-            "model": _get_url_or_error('model'),
-            "model:mapping": _get_url_or_error('model:mapping')
-        }
+def _hintadd(args):
+    return hintadd(args.pkgname, args.uuid, args.hint)
 
-        print(json.dumps(res, indent=2, sort_keys=True))
+def _hintrm(args):
+    return hintrm(args.pkgname, args.uuid)
 
-    def _cmd_hintadd(self):
-        if len(self.args) != 4:
-            raise self.BadCommand("Usage: paster ckan hintadd <pkgname> <uuid> <hint>")
+def configure_parser(subparser):
+    parser = subparser.add_parser('ckan',
+                                  help='OpenSpending-specific CKAN operations')
+    sp = parser.add_subparsers(title='subcommands')
 
-        package_name = self.args[1]
-        resource_uuid = self.args[2]
-        hint = self.args[3]
+    p = sp.add_parser('show', help='Pretty-print CKAN package')
+    p.add_argument('pkgname', help='CKAN package name')
+    p.set_defaults(func=_show)
 
-        p = ckan.Package(package_name)
+    p = sp.add_parser('check', help='Check importability of CKAN package')
+    p.add_argument('pkgname', help='CKAN package name')
+    p.set_defaults(func=_check)
 
-        print("Adding hint on %s of %s ('%s')..."
-              % (resource_uuid, package_name, hint),
-              file=sys.stderr)
+    p = sp.add_parser('hintadd', help='Add hint on resource by UUID')
+    p.add_argument('pkgname', help='CKAN package name')
+    p.add_argument('uuid', help='Resource UUID')
+    p.add_argument('hint', help='Hint content')
+    p.set_defaults(func=_hintadd)
 
-        p.add_hint(resource_uuid, hint)
-
-        print("Done!", file=sys.stderr)
-
-    def _cmd_hintrm(self):
-        if len(self.args) != 3:
-            raise self.BadCommand("Usage: paster ckan hintrm <pkgname> <uuid>")
-
-        package_name = self.args[1]
-        resource_uuid = self.args[2]
-
-        p = ckan.Package(package_name)
-
-        print("Removing hint from %s of %s..."
-              % (resource_uuid, package_name),
-              file=sys.stderr)
-
-        p.remove_hint(resource_uuid)
-
-        print("Done!", file=sys.stderr)
+    p = sp.add_parser('hintrm', help='Remove hint on resource by UUID')
+    p.add_argument('pkgname', help='CKAN package name')
+    p.add_argument('uuid', help='Resource UUID')
+    p.set_defaults(func=_hintrm)

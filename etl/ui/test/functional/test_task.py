@@ -1,5 +1,7 @@
 import time
 
+from pylons import config
+
 from openspending import model
 from openspending import mongo
 from openspending.etl.command import daemon
@@ -7,26 +9,30 @@ from openspending.etl.ui.test import ControllerTestCase, url, helpers as h
 
 class TestTaskController(ControllerTestCase):
 
-    @h.patch('openspending.ui.lib.authz.have_role')
-    def test_drop_database(self, have_role_mock):
-        have_role_mock.return_value = True
+    def setup(self):
+        super(TestTaskController, self).setup()
+        self.patcher_authz = h.patch('openspending.ui.lib.authz.have_role')
+        self.mock_authz = self.patcher_authz.start()
 
-        mongo.db.test_collection.insert({"name": "test thingy"})
+        self.patcher_dispatch = h.patch('openspending.etl.command.daemon.dispatch_job')
+        self.mock_dispatch = self.patcher_dispatch.start()
+
+    def teardown(self):
+        self.patcher_authz.stop()
+        self.patcher_dispatch.stop()
+        super(TestTaskController, self).teardown()
+
+    def test_drop_database(self):
+        self.mock_authz.return_value = True
 
         response = self.app.get(url(controller='task', action='drop_database'))
 
-        assert daemon.job_running('drop_database'), \
-            "drop_database action didn't start the drop_database job!"
+        self.mock_dispatch.assert_called_once_with(job_id='drop_database',
+                                                   config=config['__file__'],
+                                                   task='drop_collections')
 
-        while daemon.job_running('drop_database'):
-            time.sleep(0.1)
-
-        h.assert_equal(mongo.db.collection_names(), ['system.js', 'system.indexes'])
-
-
-    @h.patch('openspending.ui.lib.authz.have_role')
-    def test_remove_dataset_select(self, have_role_mock):
-        have_role_mock.return_value = True
+    def test_remove_dataset_select(self):
+        self.mock_authz.return_value = True
 
         datasets = ['one', 'two', 'three']
 
@@ -40,9 +46,8 @@ class TestTaskController(ControllerTestCase):
             assert remove_url in response, \
                 "No link to remove dataset '%s' in response!" % name
 
-    @h.patch('openspending.ui.lib.authz.have_role')
-    def test_remove_dataset(self, have_role_mock):
-        have_role_mock.return_value = True
+    def test_remove_dataset(self):
+        self.mock_authz.return_value = True
 
         model.dataset.create({'name':'mydataset'})
 
@@ -50,12 +55,9 @@ class TestTaskController(ControllerTestCase):
                                     action='remove_dataset',
                                     dataset='mydataset'))
 
-        assert daemon.job_running('remove_mydataset'), \
-            "remove_dataset action didn't start the remove_mydataset job!"
+        self.mock_dispatch.assert_called_once_with(job_id='remove_mydataset',
+                                                   config=config['__file__'],
+                                                   task='remove_dataset',
+                                                   args=('mydataset',))
 
-        while daemon.job_running('remove_mydataset'):
-            time.sleep(0.1)
-
-        res = model.dataset.find_one_by('name', 'mydataset')
-        h.assert_equal(res, None)
 

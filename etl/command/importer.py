@@ -1,180 +1,161 @@
 from __future__ import print_function
 
-import sys
+import argparse
 import logging
+import sys
 import urllib2
 
 from openspending.etl.importer import ckan
 from openspending.lib import json
 
 from openspending.etl import util
-from openspending.etl.command.base import OpenSpendingETLCommand
 from openspending.etl.importer import CSVImporter, CKANImporter, ImporterError
 
 log = logging.getLogger(__name__)
 
-class ImportCommand(OpenSpendingETLCommand):
+import_parser = argparse.ArgumentParser(add_help=False)
 
-    @classmethod
-    def standard_parser(cls, *args, **kwargs):
-        parser = OpenSpendingETLCommand.standard_parser(*args, **kwargs)
+import_parser.add_argument('-n', '--dry-run',
+                           action="store_true", dest='dry_run', default=False,
+                           help="Perform a dry run, don't load any data.")
 
-        parser.add_option('-n', '--dry-run',
-                          action="store_true", dest='dry_run', default=False,
-                          help="Perform a dry run, don't load any data.")
+import_parser.add_argument('--no-index', action="store_false", dest='build_indices',
+                           default=True, help='Suppress Solr index build.')
 
-        parser.add_option('--no-index', action="store_true", dest='no_index',
-                          default=False, help='Suppress Solr index build.')
+import_parser.add_argument('--mapping', action="store", dest='mapping',
+                           default=None, metavar='URL',
+                           help="URL of JSON format mapping.")
 
-        parser.add_option('--mapping', action="store", dest='mapping',
-                          default=None, metavar='URL',
-                          help="URL of JSON format mapping.")
+import_parser.add_argument('--max-errors', action="store", dest='max_errors',
+                           type=int, default=None, metavar='N',
+                           help="Maximum number of import errors to tolerate before giving up.")
 
-        parser.add_option('--max-errors', action="store", dest='max_errors',
-                          type=int, default=None, metavar='N',
-                          help="Maximum number of import errors to tolerate before giving up.")
+import_parser.add_argument('--max-lines', action="store", dest='max_lines',
+                           type=int, default=None, metavar='N',
+                           help="Number of lines to import.")
 
-        parser.add_option('--max-lines', action="store", dest='max_lines',
-                          type=int, default=None, metavar='N',
-                          help="Number of lines to import.")
+import_parser.add_argument('--raise-on-error', action="store_true",
+                           dest='raise_errors', default=False,
+                           help='Get full traceback on first error.')
 
-        parser.add_option('--raise-on-error', action="store_true",
-                          dest='raise_on_error', default=False,
-                          help='Get full traceback on first error.')
+def csvimport(csv_data_url, args):
 
-        return parser
+    def json_of_url(url):
+        return json.load(urllib2.urlopen(url))
 
-    def get_args(self):
-        return {
-            "dry_run": self.options.dry_run,
-            "build_indices": not self.options.no_index,
-            "raise_errors": self.options.raise_on_error,
-            "max_lines": self.options.max_lines,
-            "max_errors": self.options.max_errors
-        }
+    have_model = args.model or (args.mapping and args.metadata)
 
-class CSVImportCommand(ImportCommand):
-    summary = "Load a CSV dataset"
-    usage = "<dataset_url>"
-    description = """\
-                  You must specify one of --model OR (--mapping AND --metadata).
-                  """
+    if not have_model:
+        print("You must provide --model OR (--mapping AND --metadata)!",
+              file=sys.stderr)
+        return 1
 
-    parser = ImportCommand.standard_parser()
+    if args.model:
+        model = json_of_url(args.model)
+    else:
+        model = {}
 
-    parser.add_option('--model', action="store", dest='model',
-                      default=None, metavar='url',
-                      help="URL of JSON format model (metadata and mapping).")
+        from openspending.ui.lib.mappingimporter import MappingImporter
+        mi = MappingImporter()
+        model["mapping"] = mi.import_from_url(args.mapping)
+        model["dataset"] = json_of_url(args.metadata)
 
-    parser.add_option('--metadata', action="store", dest='metadata',
-                      default=None, metavar='URL',
-                      help="URL of JSON format metadata.")
+    csv = util.urlopen_lines(csv_data_url)
+    importer = CSVImporter(csv, model, csv_data_url)
 
-    def command(self):
-        super(CSVImportCommand, self).command()
-        self._check_args_length(1)
+    importer.run(**vars(args))
+    return 0
 
-        def json_of_url(url):
-            return json.load(urllib2.urlopen(url))
+def ckanimport(package_name, args):
+    package = ckan.Package(package_name)
 
-        csv_data_url = self.args.pop(0)
-
-        have_model = self.options.model or (self.options.mapping and self.options.metadata)
-
-        if not have_model:
-            print("You must provide --model OR (--mapping AND --metadata)!",
-                  file=sys.stderr)
+    if not args.use_ckan_tags:
+        if not args.mapping:
+            print("You must specify metadata mapping URL (--mapping)!", file=sys.stderr)
+            return 1
+        if not args.resource:
+            print("You must specify the resource UUID (--resource)!", file=sys.stderr)
             return 1
 
-        if self.options.model:
-            model = json_of_url(self.options.model)
-        else:
-            model = {}
+    if args.use_ckan_tags:
+        importer = CKANImporter(package)
+    else:
+        importer = CKANImporter(package,
+                                args.mapping,
+                                args.resource)
 
-            from openspending.ui.lib.mappingimporter import MappingImporter
-            mi = MappingImporter()
-            model["mapping"] = mi.import_from_url(self.options.mapping)
-            model["dataset"] = json_of_url(self.options.metadata)
+    importer.run(**vars(args))
+    return 0
 
-        csv = util.urlopen_lines(csv_data_url)
-        importer = CSVImporter(csv, model, csv_data_url)
+def importreport():
+    print("-- Finding OpenSpending packages on CKAN...", file=sys.stderr)
 
-        importer.run(**self.get_args())
+    packages = [ p for p in ckan.openspending_packages() ]
+    packages = filter(lambda x: x.is_importable(), packages)
 
-class CKANImportCommand(ImportCommand):
-    summary = "Load a dataset from CKAN"
-    usage = "<package_name>"
+    kwargs = {
+        'build_indices': False,
+        'max_lines': 30,
+        'max_errors': 1
+    }
 
-    parser = ImportCommand.standard_parser()
+    def first_error(package):
+        importer = CKANImporter(package)
+        try:
+            importer.run(**kwargs)
+            # If we reach the next line, no errors have been thrown, as
+            # max_errors is set to 1.
+            return "No errors"
+        except ImporterError as e:
+            return e
 
-    parser.add_option('--resource', action="store",
-                      dest='resource', default=None, metavar="UUID",
-                      help="UUID of CKAN resource containing entry data.")
+    import_errors = {}
 
-    parser.add_option('--use-ckan-tags', action="store_true",
-                      dest='use_ckan_tags', default=True,
-                      help="Use CKAN to find resource UUID and mapping URL.")
+    for p in packages:
+        print("-- Starting import of '%s'" % p.name, file=sys.stderr)
+        import_errors[p.name] = str(first_error(p))
 
-    def command(self):
-        super(CKANImportCommand, self).command()
-        self._check_args_length(1)
+    print("-- Results:", file=sys.stderr)
+    for name, err in import_errors.iteritems():
+        indented_err = "\n".join("  " +l for l in err.split("\n"))
+        print("%s:\n%s" % (name, indented_err), file=sys.stderr)
+    return 0
 
-        package = ckan.Package(self.args[0])
+def _importreport(args):
+    return importreport()
 
-        if not self.options.use_ckan_tags:
-            if not self.options.mapping:
-                print("You must specify metadata mapping URL (--mapping)!", file=sys.stderr)
-                return 1
-            if not self.options.resource:
-                print("You must specify the resource UUID (--resource)!", file=sys.stderr)
-                return 1
+def _csvimport(args):
+    return csvimport(args.dataset_url, args)
 
-        if self.options.use_ckan_tags:
-            importer = CKANImporter(package)
-        else:
-            importer = CKANImporter(package,
-                                    self.options.mapping,
-                                    self.options.resource)
+def _ckanimport(args):
+    return ckanimport(args.pkgname, args)
 
-        importer.run(**self.get_args())
+def configure_parser(subparser):
+    p = subparser.add_parser('importreport',
+                             help='Report on errors from all known datasets')
+    p.set_defaults(func=_importreport)
 
-class ImportReportCommand(OpenSpendingETLCommand):
-    summary = "Report on errors from all known datasets"
+    p = subparser.add_parser('csvimport',
+                             help='Load a CSV dataset',
+                             description='You must specify one of --model OR (--mapping AND --metadata).',
+                             parents=[import_parser])
+    p.add_argument('--model', action="store", dest='model',
+                   default=None, metavar='url',
+                   help="URL of JSON format model (metadata and mapping).")
+    p.add_argument('--metadata', action="store", dest='metadata',
+                   default=None, metavar='URL',
+                   help="URL of JSON format metadata.")
+    p.add_argument('dataset_url', help="Dataset file URL")
+    p.set_defaults(func=_csvimport)
 
-    parser = OpenSpendingETLCommand.standard_parser()
-
-    def command(self):
-        super(ImportReportCommand, self).command()
-        self._check_args_length(0)
-
-        print("-- Finding OpenSpending packages on CKAN...", file=sys.stderr)
-
-        packages = [ p for p in ckan.openspending_packages() ]
-        packages = filter(lambda x: x.is_importable(), packages)
-
-        kwargs = {
-            'build_indices': False,
-            'max_lines': 30,
-            'max_errors': 1
-        }
-
-        def first_error(package):
-            importer = CKANImporter(package)
-            try:
-                importer.run(**kwargs)
-                # If we reach the next line, no errors have been thrown, as
-                # max_errors is set to 1.
-                return "No errors"
-            except ImporterError as e:
-                return e
-
-        import_errors = {}
-
-        for p in packages:
-            print("-- Starting import of '%s'" % p.name, file=sys.stderr)
-            import_errors[p.name] = str(first_error(p))
-
-        print("-- Results:", file=sys.stderr)
-        for name, err in import_errors.iteritems():
-            indented_err = "\n".join("  " +l for l in err.split("\n"))
-            print("%s:\n%s" % (name, indented_err), file=sys.stderr)
+    p = subparser.add_parser('ckanimport',
+                             help='Load a dataset from CKAN',
+                             parents=[import_parser])
+    p.add_argument('--resource', action="store",
+                   dest='resource', default=None, metavar="UUID",
+                   help="UUID of CKAN resource containing entry data.")
+    p.add_argument('--use-ckan-tags', action="store_true",
+                   dest='use_ckan_tags', default=True,
+                   help="Use CKAN to find resource UUID and mapping URL.")
+    p.add_argument('pkgname', help="CKAN package name")
+    p.set_defaults(func=_ckanimport)

@@ -6,10 +6,8 @@ from openspending.lib import solr_util as solr
 from openspending import model
 
 from openspending.etl import times
+from openspending.etl import validation
 from openspending.etl.loader import Loader
-from openspending.etl.validation import Invalid
-from openspending.etl.validation.model import Model
-from openspending.etl.validation.entry import make_validator
 
 log = logging.getLogger(__name__)
 
@@ -37,7 +35,7 @@ class DataError(ImporterError):
         self.line_number = line_number
         self.source_file = source_file
 
-        if isinstance(exception, Invalid):
+        if isinstance(exception, validation.Invalid):
             msg = ["Validation error:"]
             for k, v in exception.asdict().iteritems():
                 msg.append("  - '%s' field had error '%s'" % (unidecode(k), unidecode(v)))
@@ -60,6 +58,9 @@ class TooManyErrorsError(ImporterError):
 
 
 class BaseImporter(object):
+
+    dimension_types = ('entity', 'classifier')
+
     def __init__(self, data, model, source_file="<stream>"):
         self.data = data
         self.model = model
@@ -74,7 +75,8 @@ class BaseImporter(object):
             max_errors=None,
             max_lines=None,
             raise_errors=False,
-            build_indices=True):
+            build_indices=True,
+            **kwargs):
 
         self.dry_run = dry_run
         self.max_errors = max_errors
@@ -84,7 +86,7 @@ class BaseImporter(object):
         self.validate_model()
         self.describe_dimensions()
 
-        self.validator = make_validator(self.fields)
+        self.validator = validation.entry.make_validator(self.fields)
 
         self.line_number = 0
 
@@ -126,9 +128,10 @@ class BaseImporter(object):
 
         log.info("Validating model")
         try:
-            self.model = Model().deserialize(self.model)
+            model_validator = validation.model.make_validator()
+            self.model = model_validator.deserialize(self.model)
             self.model_valid = True
-        except Invalid as e:
+        except validation.Invalid as e:
             raise ModelValidationError(e)
 
     def describe_dimensions(self):
@@ -137,6 +140,10 @@ class BaseImporter(object):
 
         log.info("Describing dimensions")
         for dimension, mapping in self.mapping.iteritems():
+            # Don't describe "measures"
+            if mapping.get('type') not in self.dimension_types:
+                continue
+
             self.loader.create_dimension(
                 dimension,
                 mapping.get("label"),
@@ -201,7 +208,7 @@ class BaseImporter(object):
             _line = self.validator.deserialize(line)
             if not self.dry_run:
                 self.import_line(_line)
-        except (Invalid, ImporterError) as e:
+        except (validation.Invalid, ImporterError) as e:
             if self.raise_errors:
                 raise
             else:

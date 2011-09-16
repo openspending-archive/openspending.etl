@@ -1,7 +1,8 @@
 import re
 
-from .base import (Boolean, OneOf, Function, PreservingMappingSchema,
-                   SchemaNode, SequenceSchema, String)
+from .base import (Boolean, OneOf, Invalid, Function,
+                   PreservingMappingSchema, SchemaNode, SequenceSchema,
+                   String)
 
 DATATYPE_NAMES = ['id', 'string', 'float', 'constant', 'date', 'currency']
 DIMENSION_TYPES = ['classifier', 'entity', 'value']
@@ -82,3 +83,17 @@ class Mapping(PreservingMappingSchema):
 #
 # See colander._SchemaMeta.__init__
 Mapping.from_.name = "from"
+
+def make_validator():
+    return Mapping(validator=Function(_validate))
+
+def _validate(mapping):
+
+    # Ensure that all classifiers possess a taxonomy
+    for key, value in mapping.iteritems():
+        if value['type'] == 'classifier':
+            t = value.get('taxonomy', None)
+            if not t:
+                return '"%s" (a classifier dimension) must have a "taxonomy" field' % key
+
+    return True

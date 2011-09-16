@@ -26,10 +26,10 @@ setup(
     install_requires=[
         "python-daemon==1.5.5",
         "ckanclient==0.9",
-        "openspending"
     ],
     setup_requires=[
-        "PasteScript==1.7.4.2"
+        "PasteScript==1.7.4.2",
+        "nose==1.1.2"
     ],
 
     packages=find_packages(PKG_ROOT),
@@ -57,14 +57,6 @@ setup(
         ],
         'paste.app_install': [
             'main = pylons.util:PylonsInstaller'
-        ],
-        'paste.paster_command': [
-            'csvimport = openspending.etl.command:CSVImportCommand',
-            'ckanimport = openspending.etl.command:CKANImportCommand',
-            'mappingconvert = openspending.etl.command:MappingConvertCommand',
-            'mappingurl = openspending.etl.command:MappingUrlCommand',
-            'importreport = openspending.etl.command:ImportReportCommand',
-            'ckan = openspending.etl.command:CkanCommand'
         ],
         'console_scripts': [
             'openspendingetld = openspending.etl.command.daemon:main'

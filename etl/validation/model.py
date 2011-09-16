@@ -1,9 +1,9 @@
 import colander
 
-from .base import PreservingMappingSchema, SequenceSchema
+from .base import Function, PreservingMappingSchema, SequenceSchema
 
 from .dataset import Dataset
-from .mapping import Mapping
+from . import mapping
 
 class View(PreservingMappingSchema):
     pass
@@ -13,5 +13,19 @@ class Views(SequenceSchema):
 
 class Model(PreservingMappingSchema):
     dataset = Dataset()
-    mapping = Mapping()
+    mapping = mapping.make_validator()
     views = Views(missing=[])
+
+def make_validator():
+    return Model(name='model', validator=Function(_validate))
+
+def _validate(model):
+    # Ensure that all unique_keys are valid dimension names
+    unique_keys = set(model['dataset']['unique_keys'])
+    dimensions = set(model['mapping'].keys())
+    if not unique_keys <= dimensions:
+        return ("Invalid unique keys: %s -- unique keys "
+                "must be dimension names") % \
+               list(unique_keys - dimensions)
+
+    return True
