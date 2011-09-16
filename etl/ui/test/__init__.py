@@ -16,20 +16,20 @@ from routes.util import URLGenerator
 from webtest import TestApp
 import pylons.test
 
-from openspending.etl.test import TestCase, DatabaseTestCase
+from openspending.etl.test import TestCase, DatabaseTestCase, setup_package as root_setup_package
 from openspending.etl.ui.test.helpers import clean_all
 
 __all__ = [
     'environ', 'url', 'TestCase', 'DatabaseTestCase', 'ControllerTestCase'
 ]
 
-# Invoke websetup with the current config file
-SetupCommand('setup-app').run([config['__file__']])
-
 environ = {}
 
 # Clear everything before any tests are run.
-def setup_module():
+def setup_package():
+    root_setup_package()
+    # Invoke websetup with the current config file
+    SetupCommand('setup-app').run([config['__file__']])
     clean_all()
 
 class ControllerTestCase(DatabaseTestCase):
