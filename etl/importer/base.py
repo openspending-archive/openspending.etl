@@ -59,8 +59,6 @@ class TooManyErrorsError(ImporterError):
 
 class BaseImporter(object):
 
-    dimension_types = ('entity', 'classifier')
-
     def __init__(self, data, model, source_file="<stream>"):
         self.data = data
         self.model = model
@@ -141,7 +139,7 @@ class BaseImporter(object):
         log.info("Describing dimensions")
         for dimension, mapping in self.mapping.iteritems():
             # Don't describe "measures"
-            if mapping.get('type') not in self.dimension_types:
+            if mapping.get('type') not in model.dimension.DIMENSION_TYPES:
                 continue
 
             self.loader.create_dimension(
