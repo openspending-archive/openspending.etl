@@ -100,8 +100,8 @@ def importreport():
     }
 
     def first_error(package):
-        importer = CKANImporter(package)
         try:
+            importer = CKANImporter(package)
             importer.run(**kwargs)
             # If we reach the next line, no errors have been thrown, as
             # max_errors is set to 1.
