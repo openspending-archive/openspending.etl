@@ -1,3 +1,5 @@
+from StringIO import StringIO
+
 from openspending.etl.importer import ckan
 from openspending.lib import json
 from openspending.etl.test import TestCase, helpers as h
@@ -111,4 +113,17 @@ class TestCkan(TestCase):
     def test_get_resource(self):
         p = ckan.Package('bar')
         p.get_resource('not-there')
+
+class TestCkanImporter(TestCase):
+
+    @h.patch('openspending.etl.util.urlopen')
+    def test_raises_importererror_for_invalid_json(self, urlopen_mock):
+        urlopen_mock.return_value = StringIO("{some invalid JSON}")
+
+        package = h.Mock(spec=ckan.Package)
+        package.openspending_resource.return_value = "http://foobar"
+
+        h.assert_raises_regexp(ckan.ImporterError, 'JSON model',
+                               ckan.CKANImporter,
+                               package, model_url='http://nonexistent')
 
