@@ -1,7 +1,8 @@
 import colander
 
-from .base import Function, PreservingMappingSchema, SequenceSchema
+from openspending.model.dimension import DIMENSION_TYPES
 
+from .base import Function, PreservingMappingSchema, SequenceSchema
 from .dataset import Dataset
 from . import mapping
 
@@ -23,10 +24,28 @@ def _validate(model):
     # Ensure that all unique_keys' first components (i.e. 'section' for
     # a unique_keys entry of 'section.label') are fields in the mapping.
     unique_keys = set(m.split('.')[0] for m in model['dataset']['unique_keys'])
-    dimensions = set(model['mapping'].keys())
-    if not unique_keys <= dimensions:
+    fields = set(model['mapping'].keys())
+
+    if not unique_keys <= fields:
         return ("Invalid unique keys: %s -- unique keys "
-                "must be dimension names") % \
-               list(unique_keys - dimensions)
+                "must be field names") % \
+               list(unique_keys - fields)
+
+    # Ensure that any breakdown or dimension keys in views refer to
+    # dimension types.
+    def _is_dimension(f):
+        return (model['mapping'][f]['type'] in DIMENSION_TYPES)
+
+    dimensions = set(filter(_is_dimension, fields))
+    dimensions.add('dataset')
+
+    for view in model['views']:
+        if view['dimension'] not in dimensions:
+            return ("View cannot have dimension key '%s' (it's not "
+                    "a dimension)" % view['dimension'])
+
+        if view['breakdown'] not in dimensions:
+            return ("View cannot have breakdown key '%s' (it's not "
+                    "a dimension)" % view['breakdown'])
 
     return True
