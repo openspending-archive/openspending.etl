@@ -65,6 +65,8 @@ class CSVImporter(BaseImporter):
             fieldname = str(field['name'])
             dimension_value[fieldname] = self._convert_type(line, field)
 
+        assert (('name' in dimension_value) or ('label' in dimension_value))
+
         if 'name' in dimension_value:
             name = dimension_value['name']
         else:

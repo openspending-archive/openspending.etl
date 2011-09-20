@@ -4,7 +4,7 @@ from openspending.lib import json
 
 from openspending.etl import util
 from openspending.etl.mappingimporter import MappingImporter
-from openspending.etl.importer.csv import CSVImporter
+from openspending.etl.importer.csv import CSVImporter, ImporterError
 
 openspending_group = 'openspending'
 base_location = 'http://ckan.net/api'
@@ -172,7 +172,13 @@ class CKANImporter(CSVImporter):
 
         # Model given
         if model_url and data:
-            model = json.load(util.urlopen(model_url))
+            model_fp = util.urlopen(model_url)
+            try:
+                model = json.load(model_fp)
+            except Exception as e:
+                raise ImporterError("Error encountered while parsing JSON model. "
+                                    "http://jsonlint.com might help! Error was: %s"
+                                    % e)
 
         # Mapping given, need to extract metadata from CKAN
         elif mapping_url and data:
