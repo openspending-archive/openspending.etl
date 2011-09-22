@@ -25,17 +25,15 @@ class TestLoadController(ControllerTestCase):
         # Show title for packages
         assert '<a href="http://ckan.net/package/baz">The Baz dataset</a>' in response
 
-        # Show 'import' link for importable packages
-        import_url = url(controller='load', action='start', package='bar')
-        assert '<a href="%s">' % import_url in response
+        # Show 'preflight' link for both importable and non-importable packages
+        preflight_url = url(controller='load', action='preflight', package='bar')
+        assert '<a href="%s">' % preflight_url in response
+        preflight_url = url(controller='load', action='preflight', package='baz')
+        assert '<a href="%s">' % preflight_url in response
 
-        # Show 'diagnose' link for non-importable packages
-        diagnose_url = url(controller='load', action='diagnose', package='baz')
-        assert '<a href="%s">' % diagnose_url in response
-
-    def test_diagnose_valid_package(self):
+    def test_preflight_valid_package(self):
         response = self.app.get(url(controller='load',
-                                    action='diagnose',
+                                    action='preflight',
                                     package='bar'))
 
         assert 'http://example.com/barmodel.js' in response, \
@@ -47,16 +45,16 @@ class TestLoadController(ControllerTestCase):
         assert 'error-message' not in response, \
             "There was an error-message in response"
 
-    def test_diagnose_broken_package_no_hints(self):
+    def test_preflight_broken_package_no_hints(self):
         response = self.app.get(url(controller='load',
-                                    action='diagnose',
+                                    action='preflight',
                                     package='foo'))
 
         assert 'None set' in response, "'None set' not in response!"
 
-    def test_diagnose_broken_package_ambiguous_hints(self):
+    def test_preflight_broken_package_ambiguous_hints(self):
         response = self.app.get(url(controller='load',
-                                    action='diagnose',
+                                    action='preflight',
                                     package='baz'))
 
         assert "multiple resources with hint &#39;model&#39;" in response, \

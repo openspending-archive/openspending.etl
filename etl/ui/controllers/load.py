@@ -30,14 +30,14 @@ class LoadController(BaseController):
 
         return render('load/_packages.html')
 
-    def diagnose(self, package):
+    def preflight(self, package):
         c.pkg = ckan.Package(package)
 
         c.pkg_diagnostics = {}
         for hint in ('model', 'model:mapping', 'data'):
             c.pkg_diagnostics[hint] = _resource_or_error_for_package(c.pkg, hint)
 
-        return render('load/diagnose.html')
+        return render('load/preflight.html')
 
     @requires('admin')
     def start(self, package):

@@ -36,7 +36,7 @@ def make_map():
     map.connect('/load', controller='load', action='index')
     map.connect('/load/_packages', controller='load', action='packages')
 
-    map.connect('/load/diagnose/{package}', controller='load', action='diagnose')
+    map.connect('/load/preflight/{package}', controller='load', action='preflight')
     map.connect('/load/start/{package}', controller='load', action='start')
 
     map.connect('/job/{job_id}', controller='job', action='status')

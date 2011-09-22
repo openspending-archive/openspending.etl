@@ -17,16 +17,11 @@
       <tbody>
         <tr py:for="pkg in c.packages">
             <td><a href="${pkg['ckan_url']}">${pkg['title']}</a></td>
-            <td py:choose="pkg.is_importable()">
-              <a py:when="True" href="${h.url(controller='load',
-                                              action='start',
-                                              package=pkg['name'])}">
-                Importable &ndash; start import
-              </a>
-              <a py:otherwise="" href="${h.url(controller='load',
-                                               action='diagnose',
-                                               package=pkg['name'])}">
-                Not importable &ndash; view diagnostics
+            <td>
+              <a href="${h.url(controller='load',
+                               action='preflight',
+                               package=pkg['name'])}">
+                Proceed to check importability &raquo;
               </a>
             </td>
         </tr>
