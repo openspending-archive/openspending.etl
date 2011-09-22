@@ -20,10 +20,7 @@ def _specific_type(t):
             return u"'%s' is not required type '%s'" % (n, t)
         return True
     return _check
-
-def _fields(fields):
-    import ipdb; ipdb.set_trace()
-
+    
 
 class Field(PreservingMappingSchema):
     name = SchemaNode(String(), validator=Function(_dimension_name))

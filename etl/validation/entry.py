@@ -36,12 +36,13 @@ FLOAT_RE = re.compile(r'^[0-9-\.,]+$')
 
 def _validate_float(value):
     if not FLOAT_RE.match(value):
-        return ("Numbers must only contain digits, periods, dashes and commas")
+        return ("Numbers must only contain digits, periods, "
+                "dashes and commas: '%s'" % value)
     try:
         val = float(value.replace(",",""))
         return True
     except:
-        return ("Could not coerce value into a number")
+        return "Could not coerce value into a number: '%s'" % value
 
 def make_validator(fields):
     seen = []
@@ -57,22 +58,15 @@ def make_validator(fields):
         if datatype == 'constant':
             continue
         elif datatype == 'float':
-            schema.add(
-                SchemaNode(
-                    String(),
-                    name=field,
-                    missing="0.0",
-                    validator=Function(_validate_float)
-                )
-            )
+            schema.add(SchemaNode(String(),
+                                  name=field,
+                                  missing="0.0",
+                                  validator=Function(_validate_float)))
         elif datatype == 'date':
-            schema.add(
-                SchemaNode(
-                    String(),
-                    name=field,
-                    validator=make_date_validator(dimension, is_end)
-                )
-            )
+            schema.add(SchemaNode(String(),
+                                  name=field,
+                                  validator=make_date_validator(dimension,
+                                                                is_end)))
         else:
             schema.add(SchemaNode(String(), name=field, missing=""))
     return schema
