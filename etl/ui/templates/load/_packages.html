@@ -7,26 +7,31 @@
   >
 
   <body>
-    <table>
-      <thead>
-        <tr>
-          <th>Package</th>
-          <th>&nbsp;</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr py:for="pkg in c.packages">
-            <td><a href="${pkg['ckan_url']}">${pkg['title']}</a></td>
-            <td>
-              <a href="${h.url(controller='load',
-                               action='preflight',
-                               package=pkg['name'])}">
-                Continue &raquo;
-              </a>
-            </td>
-        </tr>
-      </tbody>
-    </table>
+    <py:choose test="hasattr(c, 'packages')">
+      <table py:when="True">
+        <thead>
+          <tr>
+            <th>Package</th>
+            <th>&nbsp;</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr py:for="pkg in c.packages">
+              <td><a href="${pkg['ckan_url']}">${pkg['title']}</a></td>
+              <td>
+                <a href="${h.url(controller='load',
+                                 action='preflight',
+                                 package=pkg['name'])}">
+                  Continue &raquo;
+                </a>
+              </td>
+          </tr>
+        </tbody>
+      </table>
+      <h3 py:otherwise="">
+        Error fetching packages. Is CKAN down?
+      </h3>
+    </py:choose>
   </body>
 
 </html>
