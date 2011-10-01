@@ -315,20 +315,16 @@ class Loader(object):
         Create a classifier from the dict-like object ``classifier``.
         See :func:`openspending.model.classifier.create` for full details.
         """
-        name = classifier['name']
-        taxonomy = classifier['taxonomy']
+        cache_key = (classifier['name'], classifier['taxonomy'])
 
-        if not (name, taxonomy) in self.classifier_cache:
-            existing = model.classifier.find_one({'name': name,
-                                                  'taxonomy': taxonomy})
-            if existing:
-                classifier = existing
-            else:
-                classifier = model.classifier.create(classifier)
+        if not cache_key in self.classifier_cache:
+            # NB: model.classifier.create checks if the classifier exists
+            #     and updates it if it does. We do not need to do this
+            #     here.
+            classifier = model.classifier.create(classifier)
+            self.classifier_cache[cache_key] = classifier
 
-            self.classifier_cache[(name, taxonomy)] = classifier
-
-        return self.classifier_cache[(name, taxonomy)]
+        return self.classifier_cache[cache_key]
 
     def create_dimension(self, key, label, description, **kwargs):
         """\
