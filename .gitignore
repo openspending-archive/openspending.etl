@@ -4,3 +4,4 @@
 /.pylons_data
 *.egg-info
 *.pyc
+/.noseids
