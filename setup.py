@@ -15,6 +15,11 @@ def files_in_pkgdir(pkg, dirname):
         walkfiles += fpaths
     return walkfiles
 
+def package_filter(pkg):
+    cond = (not pkg.startswith('openspending.etl.test') and
+            not pkg.startswith('openspending.etl.ui.test'))
+    return cond
+
 setup(
     name='openspending.etl',
     version=__version__,
@@ -24,6 +29,7 @@ setup(
     url='http://github.com/okfn/openspending.etl',
 
     install_requires=[
+        "openspending",
         "python-daemon==1.5.5",
         "ckanclient==0.9",
     ],
@@ -32,7 +38,7 @@ setup(
         "nose==1.1.2"
     ],
 
-    packages=find_packages(PKG_ROOT),
+    packages=filter(package_filter, find_packages(PKG_ROOT)),
     package_dir={'': PKG_ROOT},
     namespace_packages = ['openspending'],
     package_data={

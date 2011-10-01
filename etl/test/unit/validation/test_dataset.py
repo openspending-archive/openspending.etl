@@ -1,6 +1,6 @@
-from openspending.etl.test import TestCase, helpers as h
 from openspending.etl.validation.dataset import Dataset
 
+from ... import TestCase, helpers as h
 from . import validation_errors
 
 class TestDataset(TestCase):

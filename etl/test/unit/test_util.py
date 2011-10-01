@@ -1,7 +1,9 @@
 from StringIO import StringIO
 
-from openspending.etl.test import TestCase, helpers as h
 from openspending.etl import util
+
+from .. import TestCase, helpers as h
+
 
 @h.patch('openspending.etl.util.urlopen')
 def test_urlopen_lines(urlopen_mock):

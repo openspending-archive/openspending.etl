@@ -5,7 +5,8 @@ from openspending import model
 
 from openspending.etl import loader
 from openspending.etl import util
-from openspending.etl.test import LoaderTestCase, helpers as h
+
+from .. import LoaderTestCase, helpers as h
 
 test_data = {
     (u'red', u'flowery'): 30.0,

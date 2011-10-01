@@ -1,4 +1,4 @@
-from openspending.etl.ui.test import ControllerTestCase, url, helpers as h
+from .. import ControllerTestCase, url, helpers as h
 
 class TestHomeController(ControllerTestCase):
     def test_index_csv_import_link(self):

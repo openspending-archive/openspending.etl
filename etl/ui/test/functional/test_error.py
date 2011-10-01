@@ -1,5 +1,5 @@
 from pylons import config
-from openspending.etl.ui.test import ControllerTestCase, url, helpers as h
+from .. import ControllerTestCase, url, helpers as h
 
 class TestErrorController(ControllerTestCase):
 

@@ -1,5 +1,6 @@
-from openspending.etl.test import TestCase, helpers as h
 from openspending.etl.validation import Invalid, currency
+
+from ... import TestCase, helpers as h
 
 class TestCurrency(TestCase):
     def test_currency_constant(self):

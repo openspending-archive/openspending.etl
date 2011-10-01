@@ -6,7 +6,7 @@ from StringIO import StringIO
 
 from pylons import config
 
-from openspending.etl.test import TestCase, helpers as h
+from ... import TestCase, helpers as h
 from openspending.etl.command import daemon
 
 class TestPIDLockFileZeroTimeout(TestCase):

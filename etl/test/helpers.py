@@ -1,18 +1,21 @@
 from openspending.test.helpers import *
-import pkg_resources as _pkg_resources
-from mock import Mock
 
-# Fixture helpers.
-#
-# These are redefined here, so that we load the fixtures for the
-# openspending.etl package, rather than the openspending package.
+import os as _os
 
-def _fixture_relpath(name):
-    return 'fixtures/%s' % name
+TEST_ROOT = _os.path.dirname(__file__)
+
+# We redefine the fixture helpers here so they load from the correct
+# fixtures directory, and don't attempt to load OpenSpending fixtures.
+
+def load_fixture(name):
+    """
+    Load fixture data into the database.
+    """
+    _pymongodump.restore(_mongo.db, fixture_path('%s.pickle' % name), drop=False)
 
 def fixture_file(name):
     """Return a file-like object pointing to a named fixture."""
-    return _pkg_resources.resource_stream(__name__, _fixture_relpath(name))
+    return open(fixture_path(name))
 
 def fixture_path(name):
     """
@@ -20,11 +23,7 @@ def fixture_path(name):
 
     Use fixture_file rather than this method wherever possible.
     """
-    return _pkg_resources.resource_filename(__name__, _fixture_relpath(name))
-
-def fixture_listdir(name):
-    """Return a directory listing for the named fixture."""
-    return _pkg_resources.resource_listdir(__name__, _fixture_relpath(name))
+    return _os.path.join(TEST_ROOT, 'fixtures', name)
 
 def mock_ckan(registry):
     '''

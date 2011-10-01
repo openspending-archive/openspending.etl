@@ -4,10 +4,11 @@ from urlparse import urlunparse
 
 from openspending import model
 from openspending.lib import json
-from openspending.etl.test import DatabaseTestCase, helpers as h
 
 from openspending.etl.importer import CSVImporter
 from openspending.etl.mappingimporter import MappingImporter
+
+from ... import DatabaseTestCase, helpers as h
 
 def csvimport_fixture_file(name, path):
     try:

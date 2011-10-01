@@ -1,1 +1,1 @@
-from openspending.etl.test.helpers import *
+from ...test.helpers import *

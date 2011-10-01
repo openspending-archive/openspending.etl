@@ -2,7 +2,9 @@ from StringIO import StringIO
 
 from openspending.etl.importer import ckan
 from openspending.lib import json
-from openspending.etl.test import TestCase, helpers as h
+
+from ... import TestCase, helpers as h
+
 
 current_mock_ckan = None
 

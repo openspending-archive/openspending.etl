@@ -5,7 +5,7 @@ from pylons import config
 from openspending import model
 from openspending import mongo
 from openspending.etl.command import daemon
-from openspending.etl.ui.test import ControllerTestCase, url, helpers as h
+from .. import ControllerTestCase, url, helpers as h
 
 class TestTaskController(ControllerTestCase):
 

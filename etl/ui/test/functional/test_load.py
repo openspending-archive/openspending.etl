@@ -3,7 +3,7 @@ from pylons import config
 from openspending.etl.importer import ckan
 from openspending.lib import json
 from openspending.etl.command import daemon
-from openspending.etl.ui.test import ControllerTestCase, url, helpers as h
+from .. import ControllerTestCase, url, helpers as h
 
 MOCK_REGISTRY = json.load(h.fixture_file('mock_ckan.json'))
 

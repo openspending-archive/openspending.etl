@@ -1,6 +1,7 @@
-from openspending.etl.test import TestCase, helpers as h
-from openspending.etl import tasks
 from openspending import model, mongo
+from openspending.etl import tasks
+
+from .. import TestCase, helpers as h
 
 def test_drop_collections():
     mongo.db.test_collection.insert({"name": "test thingy"})

@@ -1,1 +1,1 @@
-git+git://github.com/okfn/openspending.git@develop#egg=openspending
+git+git://github.com/okfn/openspending.git@master#egg=openspending

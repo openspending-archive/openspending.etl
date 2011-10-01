@@ -10,28 +10,19 @@ in the root of the repository, while in an active virtualenv. See
 doc/install.rst for more information.
 """
 
+import os
+
 from pylons import config
 
 from openspending import mongo
-from .helpers import clean_all
+from openspending import model
+from openspending.etl.loader import Loader
+from openspending.test import TestCase, DatabaseTestCase
 
-__all__ = ['TestCase', 'DatabaseTestCase']
+__all__ = ['TestCase', 'DatabaseTestCase', 'LoaderTestCase']
 
 def setup_package():
     mongo.configure(config)
-
-class TestCase(object):
-    def setup(self):
-        pass
-
-    def teardown(self):
-        pass
-
-class DatabaseTestCase(TestCase):
-    def teardown(self):
-        clean_all()
-        super(DatabaseTestCase, self).teardown()
-
 
 class LoaderTestCase(DatabaseTestCase):
     '''
@@ -40,13 +31,10 @@ class LoaderTestCase(DatabaseTestCase):
 
     def _make_loader(self, dataset_name=u'test_dataset', unique_keys=['name'],
                      label=u'Test Dataset', **kwargs):
-        from openspending.etl.loader import Loader
         loader = Loader(dataset_name, unique_keys, label, **kwargs)
         return loader
 
     def _make_entry(self, loader, **kwargs):
-        from openspending import model
-
         entry = {'name': 'Test Entry',
                  'amount': 1000.00,
                  'time': {'from': {'year': 2009,

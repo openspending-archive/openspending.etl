@@ -1,6 +1,7 @@
 from openspending.lib import json
-from openspending.etl.test import helpers as h
 from openspending.etl.validation import Invalid
+
+from ... import helpers as h
 
 def _load_json(fp_or_str):
     try:

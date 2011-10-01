@@ -1,8 +1,9 @@
-from openspending.etl.test import TestCase, helpers as h
 from openspending.etl.validation.mapping import (
     Dimension, AmountDimension, DateDimension, Field, Fields, Mapping
 )
 
+
+from ... import TestCase, helpers as h
 from . import validation_result, validation_errors
 
 class TestField(TestCase):
