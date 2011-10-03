@@ -3,8 +3,7 @@ from datetime import datetime
 from openspending.lib import unicode_dict_reader as udr
 
 from openspending.etl import util
-from openspending.etl.times import for_datestrings, EMPTY_DATE
-from openspending.etl.validation.entry import PLACEHOLDER
+from openspending.etl.validation.types import attribute_type_by_name
 from openspending.etl.importer.base import BaseImporter, ImporterError
 
 class LineImportError(ImporterError):
@@ -88,28 +87,5 @@ class CSVImporter(BaseImporter):
 
     def _convert_type(self, line, description):
         type_string = description.get('datatype', 'value')
-        value = line.get(description.get('column'))
-
-        if not value:
-            if description.get('default_value', '').strip():
-                value = description.get('default_value').strip()
-        if type_string == "constant":
-            return description.get('constant')
-        if value is None:
-            return
-        if type_string == "date":
-            default = description.get('default_value')
-            if not value or value == PLACEHOLDER:
-                if not default:
-                    return EMPTY_DATE
-                else:
-                    value = default
-            end_value = line.get(description.get('end_column'))
-            return for_datestrings(value, end_value)
-        if type_string == "string":
-            return value
-        elif type_string == "float":
-            return float(unicode(value).replace(",", ""))
-        elif type_string == "id":
-            return util.slugify(value)
-        return value
+        type_ = attribute_type_by_name(type_string)
+        return type_.cast(line, description)

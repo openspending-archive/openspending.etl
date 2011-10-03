@@ -84,7 +84,7 @@ class BaseImporter(object):
         self.validate_model()
         self.describe_dimensions()
 
-        self.validator = validation.entry.make_validator(self.fields)
+        self.validator = validation.types.make_validator(self.fields)
 
         self.line_number = 0
 
@@ -228,27 +228,11 @@ class BaseImporter(object):
             raise TooManyErrorsError("The following errors occurred:" + all_errors)
 
     def _generate_fields(self):
-        def _field(dimension, mapping, column_name, is_end=False):
-            return {
-                'dimension': dimension,
-                'field': mapping.get(column_name),
-                'datatype': mapping.get('datatype'),
-                'is_end': is_end
-            }
-
-        fields = []
-
+        self.fields = []
         for dimension, mapping in self.mapping.items():
+            mapping['dimension'] = dimension
             if mapping.get('type') == 'value':
-                fields.append(_field(dimension, mapping, 'column'))
-
-                if mapping.get('end_column'):
-                    fields.append(_field(dimension,
-                                         mapping,
-                                         'end_column',
-                                         True))
+                self.fields.append(mapping)
             else:
                 for field in mapping.get('fields', []):
-                    fields.append(_field(dimension, field, 'column'))
-
-        self.fields = fields
+                    self.fields.append(field)
