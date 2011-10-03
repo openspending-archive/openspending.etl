@@ -5,9 +5,8 @@ from unidecode import unidecode
 from openspending.lib import solr_util as solr
 from openspending import model
 
-from openspending.etl import times
+from openspending.etl.validation.types import attribute_type_by_name
 from openspending.etl import validation
-from openspending.etl.loader import Loader
 
 log = logging.getLogger(__name__)
 
@@ -78,11 +77,10 @@ class BaseImporter(object):
 
         self.dry_run = dry_run
         self.max_errors = max_errors
-        self.do_build_indices = build_indices
         self.raise_errors = raise_errors
 
         self.validate_model()
-        self.describe_dimensions()
+        #self.describe_dimensions()
 
         self.validator = validation.types.make_validator(self.fields)
 
@@ -99,7 +97,6 @@ class BaseImporter(object):
             self.add_error("Didn't read any lines of data")
 
         self.generate_views()
-        self.build_indices()
 
         if self.errors:
             log.error("Finished import with %d errors:", len(self.errors))
@@ -111,14 +108,6 @@ class BaseImporter(object):
     @property
     def lines(self):
         raise NotImplementedError("lines not implemented in BaseImporter")
-
-    @property
-    def mapping(self):
-        return self.model['mapping']
-
-    @property
-    def views(self):
-        return self.model.get('views', [])
 
     def validate_model(self):
         if self.model_valid:
@@ -132,71 +121,22 @@ class BaseImporter(object):
         except validation.Invalid as e:
             raise ModelValidationError(e)
 
-    def describe_dimensions(self):
-        if self.dry_run:
-            return False
-
-        log.info("Describing dimensions")
-        for dimension, mapping in self.mapping.iteritems():
-            # Don't describe "measures"
-            if mapping.get('type') not in model.dimension.DIMENSION_TYPES:
-                continue
-
-            self.loader.create_dimension(
-                dimension,
-                mapping.get("label"),
-                type=mapping.get('type'),
-                datatype=mapping.get('datatype'),
-                fields=mapping.get('fields', []),
-                facet=mapping.get('facet'),
-                description=mapping.get("description")
-            )
-
     def generate_views(self):
         if self.dry_run:
             return False
 
         log.info("Generating aggregates and views")
-        self.loader.flush_aggregates()
-        for view in self.views:
-            entity_cls = getattr(model, view.get('entity'))
-            self.loader.create_view(
-                entity_cls,
-                view.get('filters', {}),
-                name=view.get('name'),
-                label=view.get('label'),
-                dimension=view.get('dimension'),
-                breakdown=view.get('breakdown'),
-                view_filters=view.get('view_filters', {})
-            )
-        self.loader.compute_aggregates()
-
-    def build_indices(self):
-        if self.dry_run or not self.do_build_indices:
-            return False
-
-        log.info("Building search indices")
-        solr.drop_index(self.model['dataset']['name'])
-        solr.build_index(self.model['dataset']['name'])
-
-    @property
-    def loader(self):
-        if not hasattr(self, '_loader'):
-            dataset = self.model.get('dataset').copy()
-
-            self._loader = Loader(
-                dataset_name=dataset.get('name'),
-                unique_keys=dataset.get('unique_keys', ['_csv_import_fp']),
-                label=dataset.get('label'),
-                description=dataset.pop('description'),
-                currency=dataset.pop('currency'),
-                time_axis=times.GRANULARITY.get(dataset.get(
-                    'temporal_granularity',
-                    'year'
-                )),
-                metadata=dataset
-            )
-        return self._loader
+        for view in self.model.get('views', []):
+            #self.loader.create_view(
+            #    entity_cls,
+            #    view.get('filters', {}),
+            #    name=view.get('name'),
+            #    label=view.get('label'),
+            #    dimension=view.get('dimension'),
+            #    breakdown=view.get('breakdown'),
+            #    view_filters=view.get('view_filters', {})
+            #)
+            pass
 
     def process_line(self, line):
         if self.line_number % 1000 == 0:
@@ -213,7 +153,12 @@ class BaseImporter(object):
                 self.add_error(e)
 
     def import_line(self, line):
-        raise NotImplementedError("import_line not implemented in BaseImporter")
+        pass
+
+    def _convert_type(self, line, description):
+        type_string = description.get('datatype', 'value')
+        type_ = attribute_type_by_name(type_string)
+        return type_.cast(line, description)
 
     def add_error(self, exception):
         err = DataError(exception=exception,
@@ -229,7 +174,7 @@ class BaseImporter(object):
 
     def _generate_fields(self):
         self.fields = []
-        for dimension, mapping in self.mapping.items():
+        for dimension, mapping in self.model['mapping'].items():
             mapping['dimension'] = dimension
             if mapping.get('type') == 'value':
                 self.fields.append(mapping)

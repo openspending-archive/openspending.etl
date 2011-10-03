@@ -1,4 +1,4 @@
-from openspending import model, mongo
+from openspending import model
 from openspending.etl import tasks
 
 from .. import TestCase, helpers as h

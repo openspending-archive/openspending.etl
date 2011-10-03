@@ -9,7 +9,10 @@ from pylons import config
 import pylons
 from webhelpers import markdown
 
-from openspending import mongo
+from sqlalchemy import engine_from_config
+from migrate.versioning.util import construct_engine
+
+from openspending.model import init_model
 from openspending.ui.lib import helpers
 
 from openspending.etl.ui.config.routing import make_map
@@ -84,7 +87,10 @@ def load_environment(global_conf, app_conf):
     config['pylons.app_globals'].genshi_loader = TemplateLoader(
         template_paths, auto_reload=True, callback=template_loaded)
 
-    mongo.configure(config)
+    # SQLAlchemy
+    engine = engine_from_config(config, 'sqlalchemy.')
+    engine = construct_engine(engine)
+    init_model(engine)
 
     # Configure ckan
     import openspending.etl.importer.ckan as ckan
