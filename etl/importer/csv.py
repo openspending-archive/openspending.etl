@@ -98,7 +98,8 @@ class CSVImporter(BaseImporter):
         if not value:
             return default or value
 
-        def default_date():
+        # free vars so we could move the function away
+        def parse_date(value, default, end_value):
             if not value or value == PLACEHOLDER:
                 if not default:
                     return EMPTY_DATE
@@ -106,13 +107,12 @@ class CSVImporter(BaseImporter):
                     return for_datestrings(default, end_value)
             return for_datestrings(value, end_value)
 
-        if type_string == "date":
-            return default_date()
-        elif type_string == "string":
-            return value
-        elif type_string == "float":
-            return float(unicode(value).replace(",", ""))
-        elif type_string == "id":
-            return util.slugify(value)
-        else:
-            return value
+        handlers = {
+            "date": parse_date,
+            "string": lambda value, _, __: value,
+            "float": lambda value, _, __: float(unicode(value).replace(",", "")),
+            "id": lambda value, _, __: util.slugify(value)
+            }
+
+        handler = handlers.get(type_string, lambda value, _, __: value)
+        return handler(value, default, end_value)
