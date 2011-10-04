@@ -2,7 +2,8 @@ from os.path import dirname, join
 from StringIO import StringIO
 from urlparse import urlunparse
 
-from openspending import model
+from openspending.model import Dataset
+from openspending.model import meta as db
 from openspending.lib import json
 
 from openspending.etl.importer import CSVImporter
@@ -39,11 +40,13 @@ class TestCSVImporter(DatabaseTestCase):
         data, dmodel = csvimport_fixture('successful_import')
         importer = CSVImporter(data, dmodel)
         importer.run()
-        dataset = model.dataset.find_one()
+        dataset = db.session.query(Dataset).first()
         h.assert_true(dataset is not None, "Dataset should not be None")
         h.assert_equal(dataset['name'], "test-csv")
-        entries = model.entry.find({"dataset.name": dataset['name']})
-        h.assert_equal(entries.count(), 4)
+        entries = dataset.materialize()
+        h.assert_equal(len(entries), 4)
+
+        # TODO: provenance
         entry = model.entry.find_one({"provenance.line": 2})
         h.assert_true(entry is not None,
                       "Entry with name could not be found")
@@ -53,12 +56,9 @@ class TestCSVImporter(DatabaseTestCase):
         data, dmodel = csvimport_fixture('simple')
         importer = CSVImporter(data, dmodel)
         importer.run()
-        dataset = model.dataset.find_one()
+        dataset = db.session.query(Dataset).first()
 
-        dimensions = [c['key']
-                      for c
-                      in model.dimension.find()]
-
+        dimensions = [d.name for d in dataset.dimensions]
         h.assert_equal(sorted(dimensions), ['from', 'to'])
 
     def test_successful_import_with_simple_testdata(self):
@@ -67,11 +67,11 @@ class TestCSVImporter(DatabaseTestCase):
         importer.run()
         h.assert_equal(importer.errors, [])
 
-        dataset = model.dataset.find_one()
+        dataset = db.session.query(Dataset).first()
         h.assert_true(dataset is not None, "Dataset should not be None")
 
-        entries = model.entry.find({"dataset.name": dataset['name']})
-        h.assert_equal(entries.count(), 5)
+        entries =  dataset.materialize()
+        h.assert_equal(len(entries), 5)
 
         entry = entries[0]
         h.assert_equal(entry['from']['label'], 'Test From')
@@ -147,8 +147,9 @@ class TestCSVImportDatasets(DatabaseTestCase):
         h.assert_equal(len(importer.errors), 0)
 
         # check correct number of entries
-        entries = model.entry.find({"dataset.name": dmodel['dataset']['name']})
-        h.assert_equal(entries.count(), lines)
+        dataset = db.session.query(Dataset).first()
+        entries =  dataset.materialize()
+        h.assert_equal(len(entries), lines)
 
     def _test_mapping(self, name):
         mapping_csv = csvimport_fixture_file(name, 'mapping.csv').read()
