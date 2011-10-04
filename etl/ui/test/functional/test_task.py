@@ -1,10 +1,6 @@
-import time
-
 from pylons import config
 
-from openspending import model
-from openspending import mongo
-from openspending.etl.command import daemon
+from openspending.model import Dataset, meta as db
 from .. import ControllerTestCase, url, helpers as h
 
 class TestTaskController(ControllerTestCase):
@@ -29,7 +25,7 @@ class TestTaskController(ControllerTestCase):
 
         self.mock_dispatch.assert_called_once_with(job_id='drop_database',
                                                    config=config['__file__'],
-                                                   task='drop_collections')
+                                                   task='drop_datasets')
 
     def test_remove_dataset_select(self):
         self.mock_authz.return_value = True
@@ -48,9 +44,11 @@ class TestTaskController(ControllerTestCase):
 
     def test_remove_dataset(self):
         self.mock_authz.return_value = True
-
-        model.dataset.create({'name':'mydataset'})
-
+        
+        dataset = Dataset({'name':'mydataset'})
+        db.session.add(dataset)
+        db.session.commit()
+        
         response = self.app.get(url(controller='task',
                                     action='remove_dataset',
                                     dataset='mydataset'))

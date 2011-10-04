@@ -19,7 +19,7 @@ class TaskController(BaseController):
         daemon.dispatch_job(
             job_id=c.job_id,
             config=config['__file__'],
-            task='drop_collections'
+            task='drop_datasets'
         )
         return redirect(url(controller='job', action='status', job_id=c.job_id))
 
