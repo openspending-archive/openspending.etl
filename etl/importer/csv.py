@@ -96,7 +96,7 @@ class CSVImporter(BaseImporter):
         if type_string == "constant":
             return description.get('constant')
         if value is None:
-            return
+            return value
         if type_string == "date":
             default = description.get('default_value')
             if not value or value == PLACEHOLDER:
