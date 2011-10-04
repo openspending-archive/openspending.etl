@@ -3,7 +3,7 @@ import logging
 from unidecode import unidecode
 
 from openspending.lib import solr_util as solr
-from openspending import model
+from openspending.model import Dataset, meta as db
 
 from openspending.etl.validation.types import attribute_type_by_name
 from openspending.etl import validation
@@ -80,6 +80,8 @@ class BaseImporter(object):
         self.raise_errors = raise_errors
 
         self.validate_model()
+        self.dataset = self.create_dataset(dry_run=dry_run)
+        self.dataset.generate()
         #self.describe_dimensions()
 
         self.validator = validation.types.make_validator(self.fields)
@@ -121,6 +123,19 @@ class BaseImporter(object):
         except validation.Invalid as e:
             raise ModelValidationError(e)
 
+    def create_dataset(self, dry_run=True):
+        q = db.session.query(Dataset)
+        q = q.filter_by(name=self.model['dataset']['name'])
+        dataset = q.first()
+        if dataset is not None:
+            return dataset
+        dataset = Dataset(self.model)
+        # TODO: only persist for non-dry-run?
+        if not dry_run:
+            db.session.add(dataset)
+            db.session.commit()
+        return dataset
+
     def generate_views(self):
         if self.dry_run:
             return False
@@ -153,7 +168,7 @@ class BaseImporter(object):
                 self.add_error(e)
 
     def import_line(self, line):
-        pass
+        self.dataset.load(line)
 
     def _convert_type(self, line, description):
         type_string = description.get('datatype', 'value')
