@@ -205,7 +205,6 @@ class BaseImporter(object):
         try:
             _line = self.validator.deserialize(line)
             if not self.dry_run:
-                print(_line)
                 self.import_line(_line)
         except (validation.Invalid, ImporterError) as e:
             if self.raise_errors:
