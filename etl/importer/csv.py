@@ -89,27 +89,30 @@ class CSVImporter(BaseImporter):
     def _convert_type(self, line, description):
         type_string = description.get('datatype', 'value')
         value = line.get(description.get('column'))
+        default = description.get('default_value', '').strip()
+        end_value = line.get(description.get('end_column'))
 
-        if not value:
-            if description.get('default_value', '').strip():
-                value = description.get('default_value').strip()
         if type_string == "constant":
             return description.get('constant')
-        if value is None:
-            return
-        if type_string == "date":
-            default = description.get('default_value')
+
+        if not value:
+            return default or value
+
+        # free vars so we could move the function away
+        def parse_date(value, default, end_value):
             if not value or value == PLACEHOLDER:
                 if not default:
                     return EMPTY_DATE
                 else:
-                    value = default
-            end_value = line.get(description.get('end_column'))
+                    return for_datestrings(default, end_value)
             return for_datestrings(value, end_value)
-        if type_string == "string":
-            return value
-        elif type_string == "float":
-            return float(unicode(value).replace(",", ""))
-        elif type_string == "id":
-            return util.slugify(value)
-        return value
+
+        handlers = {
+            "date": parse_date,
+            "string": lambda value, _, __: value,
+            "float": lambda value, _, __: float(unicode(value).replace(",", "")),
+            "id": lambda value, _, __: util.slugify(value)
+            }
+
+        handler = handlers.get(type_string, lambda value, _, __: value)
+        return handler(value, default, end_value)
