@@ -89,18 +89,15 @@ class CSVImporter(BaseImporter):
     def _convert_type(self, line, description):
         type_string = description.get('datatype', 'value')
         value = line.get(description.get('column'))
+        default = description.get('default_value', '').strip()
 
         if type_string == "constant":
             return description.get('constant')
 
         if not value:
-            if description.get('default_value', '').strip():
-                value = description.get('default_value').strip()
-        if value is None:
-            return value
+            return default or value
 
         if type_string == "date":
-            default = description.get('default_value')
             if not value or value == PLACEHOLDER:
                 if not default:
                     return EMPTY_DATE
