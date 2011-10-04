@@ -90,13 +90,15 @@ class CSVImporter(BaseImporter):
         type_string = description.get('datatype', 'value')
         value = line.get(description.get('column'))
 
+        if type_string == "constant":
+            return description.get('constant')
+
         if not value:
             if description.get('default_value', '').strip():
                 value = description.get('default_value').strip()
-        if type_string == "constant":
-            return description.get('constant')
         if value is None:
             return value
+
         if type_string == "date":
             default = description.get('default_value')
             if not value or value == PLACEHOLDER:
@@ -106,10 +108,11 @@ class CSVImporter(BaseImporter):
                     value = default
             end_value = line.get(description.get('end_column'))
             return for_datestrings(value, end_value)
-        if type_string == "string":
+        elif type_string == "string":
             return value
         elif type_string == "float":
             return float(unicode(value).replace(",", ""))
         elif type_string == "id":
             return util.slugify(value)
-        return value
+        else:
+            return value
