@@ -1,8 +1,8 @@
 import re
+from datetime import datetime
 
-from colander import SchemaNode, String, Invalid
+from colander import SchemaNode, String, Invalid, Mapping
 
-from openspending.etl.validation.base import Mapping, SchemaNode, String, Invalid
 from openspending.etl.util import slugify
 from openspending.etl.times import for_datestrings, EMPTY_DATE
 
@@ -30,12 +30,14 @@ class AttributeType(object):
         were already handled. """
         raise TypeError("No casting method defined!")
 
-    def _column_or_default(self, row, meta):
+    def _column_or_default(self, row, meta, fallback):
         """ Utility function to handle using either the column 
         field or the default value specified. """
         value = row.get(meta.get('column'))
         if not value and meta.get('default_value', '').strip():
             value = meta.get('default_value').strip()
+        elif not value:
+            value = fallback
         return value
 
     def __eq__(self, other):
@@ -65,7 +67,7 @@ class StringAttributeType(AttributeType):
         return True
 
     def cast(self, row, meta):
-        value = self._column_or_default(row, meta) or ""
+        value = self._column_or_default(row, meta, "")
         return unicode(value)
 
 class IdentifierAttributeType(StringAttributeType):
@@ -73,7 +75,9 @@ class IdentifierAttributeType(StringAttributeType):
     converted to a URI-compatible representation. """
 
     def cast(self, row, meta):
-        value = self._column_or_default(row, meta)
+        value = self._column_or_default(row, meta, "")
+        if not len(value):
+            raise ValueError()
         return slugify(value)
 
 class FloatAttributeType(AttributeType):
@@ -83,7 +87,7 @@ class FloatAttributeType(AttributeType):
     RE = re.compile(r'^[0-9-\.,]+$')
 
     def test(self, row, meta):
-        value = unicode(self._column_or_default(row, meta))
+        value = unicode(self._column_or_default(row, meta, "0.0"))
         if not self.RE.match(value):
             return ("Numbers must only contain digits, periods, "
                     "dashes and commas: '%s'" % value)
@@ -95,7 +99,7 @@ class FloatAttributeType(AttributeType):
                     % value
 
     def cast(self, row, meta):
-        value = unicode(self._column_or_default(row, meta)) or "0.0"
+        value = unicode(self._column_or_default(row, meta, "0.0"))
         return float(value.replace(",", ""))
 
 class DateAttributeType(AttributeType):
@@ -105,39 +109,30 @@ class DateAttributeType(AttributeType):
               'e.g. "2011-12-31".')
 
     def test(self, row, meta):
-        value = unicode(self._column_or_default(row, meta))
-        end_value = row.get(meta.get('end_column'))
-        for value, is_end in [(value, False), (end_value, True)]:
-            column = meta.get('end_column' if is_end else 'column')
+        # version with end_column: https://gist.github.com/1261320
+        try:
+            self.cast(row, meta)
+            return True
+        except ValueError:
+            value = unicode(self._column_or_default(row, meta, ""))
             if meta['dimension'] != 'time':
-                msg = '"%s" can be empty or a value %s' % (column, self.SUFFIX)
                 if not value:
-                    continue
-            else:
-                if is_end and not value:
-                    continue
-            msg = ('"time" (here "%s") has to be %s. The "end_column", if specified, '
-                   'might be empty') % (value, self.SUFFIX)
-            try:
-                for_datestrings(value)
-            except:
-                return msg
-        return True
+                    return True
+                return '"%s" can be empty or a value %s' % (
+                        meta.get('column'), self.SUFFIX)
+            return '"time" (here "%s") has to be %s.' % (value, self.SUFFIX)
 
-    
     def cast(self, row, meta):
-        value = unicode(self._column_or_default(row, meta))
-        end_value = row.get(meta.get('end_column'))
-        # TODO: former implementation had the following logic which 
-        # this does not fully reproduce:
-        #if not value or value == PLACEHOLDER:
-        #        if not default:
-        #            return EMPTY_DATE
-        #        else:
-        #            value = default
-        if not value:
-            value = EMPTY_DATE
-        return for_datestrings(value, end_value)
+        value = unicode(self._column_or_default(row, meta, ""))
+        if value:
+            for format in ["%Y-%m-%d", "%Y-%m", "%Y"]:
+                try:
+                    return datetime.strptime(value, format).date()
+                except ValueError: pass
+        elif meta['dimension'] != 'time':
+            # ugly logic rule #3983:
+            return None
+        raise ValueError()
 
 
 ATTRIBUTE_TYPES = {
