@@ -42,9 +42,9 @@ class TestCSVImporter(DatabaseTestCase):
         importer.run()
         dataset = db.session.query(Dataset).first()
         h.assert_true(dataset is not None, "Dataset should not be None")
-        h.assert_equal(dataset['name'], "test-csv")
+        h.assert_equal(dataset.name, "test-csv")
         entries = dataset.materialize()
-        h.assert_equal(len(entries), 4)
+        h.assert_equal(len(list(entries)), 4)
 
         # TODO: provenance
         entry = model.entry.find_one({"provenance.line": 2})
@@ -58,8 +58,8 @@ class TestCSVImporter(DatabaseTestCase):
         importer.run()
         dataset = db.session.query(Dataset).first()
 
-        dimensions = [d.name for d in dataset.dimensions]
-        h.assert_equal(sorted(dimensions), ['from', 'to'])
+        dimensions = [str(d.name) for d in dataset.dimensions]
+        h.assert_equal(sorted(dimensions), ['currency', 'from', 'id', 'time', 'to'])
 
     def test_successful_import_with_simple_testdata(self):
         data, dmodel = csvimport_fixture('simple')
@@ -70,13 +70,13 @@ class TestCSVImporter(DatabaseTestCase):
         dataset = db.session.query(Dataset).first()
         h.assert_true(dataset is not None, "Dataset should not be None")
 
-        entries =  dataset.materialize()
+        entries = list(dataset.materialize())
         h.assert_equal(len(entries), 5)
 
         entry = entries[0]
         h.assert_equal(entry['from']['label'], 'Test From')
         h.assert_equal(entry['to']['label'], 'Test To')
-        h.assert_equal(entry['time']['unparsed'], '2010-01-01')
+        h.assert_equal(entry['time'], '2010-01-01')
         h.assert_equal(entry['amount'], 100.00)
 
     def test_import_errors(self):
@@ -148,7 +148,7 @@ class TestCSVImportDatasets(DatabaseTestCase):
 
         # check correct number of entries
         dataset = db.session.query(Dataset).first()
-        entries =  dataset.materialize()
+        entries = list(dataset.materialize())
         h.assert_equal(len(entries), lines)
 
     def _test_mapping(self, name):
