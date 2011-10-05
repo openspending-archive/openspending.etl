@@ -116,8 +116,8 @@ class DateAttributeType(AttributeType):
         except ValueError:
             value = unicode(self._column_or_default(row, meta, ""))
             if meta['dimension'] != 'time':
-                if not value:
-                    return True
+                #if not value:
+                #    return True
                 return '"%s" can be empty or a value %s' % (
                         meta.get('column'), self.SUFFIX)
             return '"time" (here "%s") has to be %s.' % (value, self.SUFFIX)
@@ -129,9 +129,9 @@ class DateAttributeType(AttributeType):
                 try:
                     return datetime.strptime(value, format).date()
                 except ValueError: pass
-        elif meta['dimension'] != 'time':
-            # ugly logic rule #3983:
-            return None
+        #elif meta['dimension'] != 'time':
+        #    # ugly logic rule #3983:
+        #    return None
         raise ValueError()
 
 

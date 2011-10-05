@@ -47,7 +47,7 @@ class TestCSVImporter(DatabaseTestCase):
         h.assert_equal(len(list(entries)), 4)
 
         # TODO: provenance
-        entry = model.entry.find_one({"provenance.line": 2})
+        entry = list(dataset.materialize(limit=1, offset=1)).pop()
         h.assert_true(entry is not None,
                       "Entry with name could not be found")
         h.assert_equal(entry['amount'], 130000.0)
