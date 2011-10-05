@@ -7,7 +7,7 @@ from openspending.etl.mappingimporter import MappingImporter
 from openspending.etl.importer.csv import CSVImporter, ImporterError
 
 openspending_group = 'openspending'
-base_location = None
+base_location = 'http://thedatahub.org/api'
 api_key = None
 
 _client = None
@@ -21,8 +21,8 @@ def configure(config=None):
         config = {}
 
     openspending_group = config.get('openspending.ckan_group', openspending_group)
-    base_location = config.get('openspending.ckan_location')
-    api_key = config.get('openspending.ckan_api_key')
+    base_location = config.get('openspending.ckan_location', base_location)
+    api_key = config.get('openspending.ckan_api_key', api_key)
 
 def make_client():
     return CkanClient(base_location=base_location, api_key=api_key)
