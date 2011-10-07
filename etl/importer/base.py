@@ -98,8 +98,6 @@ class BaseImporter(object):
         if self.line_number == 0:
             self.add_error("Didn't read any lines of data")
 
-        self.generate_views()
-
         if self.errors:
             log.error("Finished import with %d errors:", len(self.errors))
             for err in self.errors:
@@ -135,23 +133,6 @@ class BaseImporter(object):
             db.session.add(dataset)
             db.session.commit()
         return dataset
-
-    def generate_views(self):
-        if self.dry_run:
-            return False
-
-        log.info("Generating aggregates and views")
-        for view in self.model.get('views', []):
-            #self.loader.create_view(
-            #    entity_cls,
-            #    view.get('filters', {}),
-            #    name=view.get('name'),
-            #    label=view.get('label'),
-            #    dimension=view.get('dimension'),
-            #    breakdown=view.get('breakdown'),
-            #    view_filters=view.get('view_filters', {})
-            #)
-            pass
 
     def process_line(self, line):
         if self.line_number % 1000 == 0:
