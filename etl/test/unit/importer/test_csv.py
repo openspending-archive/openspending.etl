@@ -76,7 +76,7 @@ class TestCSVImporter(DatabaseTestCase):
         entry = entries[0]
         h.assert_equal(entry['from']['label'], 'Test From')
         h.assert_equal(entry['to']['label'], 'Test To')
-        h.assert_equal(entry['time'], '2010-01-01')
+        h.assert_equal(entry['time']['name'], '2010-01-01')
         h.assert_equal(entry['amount'], 100.00)
 
     def test_import_errors(self):

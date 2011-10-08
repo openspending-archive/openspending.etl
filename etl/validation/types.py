@@ -188,7 +188,7 @@ def convert_types(mapping, row):
             for field in meta.get('attributes', meta.get('fields', [])):
                 out[dimension][field['name']] = _cast(row, field)
                 if field['name'] == 'label':
-                    label_meta = field
+                    label_meta = field.copy()
             # if there is no 'name' attribute, try to use a munged 
             # version of 'label'
             if not 'name' in out[dimension] and label_meta is not None:
