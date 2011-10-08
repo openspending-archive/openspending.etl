@@ -48,7 +48,7 @@ class TestTaskController(ControllerTestCase):
     def test_remove_dataset(self):
         self.mock_authz.return_value = True
         
-        dataset = Dataset({'name':'mydataset'})
+        dataset = Dataset({'dataset': {'name':'mydataset'}})
         db.session.add(dataset)
         db.session.commit()
         

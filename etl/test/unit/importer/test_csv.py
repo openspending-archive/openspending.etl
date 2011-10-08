@@ -43,11 +43,11 @@ class TestCSVImporter(DatabaseTestCase):
         dataset = db.session.query(Dataset).first()
         h.assert_true(dataset is not None, "Dataset should not be None")
         h.assert_equal(dataset.name, "test-csv")
-        entries = dataset.materialize()
+        entries = dataset.entries()
         h.assert_equal(len(list(entries)), 4)
 
         # TODO: provenance
-        entry = list(dataset.materialize(limit=1, offset=1)).pop()
+        entry = list(dataset.entries(limit=1, offset=1)).pop()
         h.assert_true(entry is not None,
                       "Entry with name could not be found")
         h.assert_equal(entry['amount'], 130000.0)
@@ -70,7 +70,7 @@ class TestCSVImporter(DatabaseTestCase):
         dataset = db.session.query(Dataset).first()
         h.assert_true(dataset is not None, "Dataset should not be None")
 
-        entries = list(dataset.materialize())
+        entries = list(dataset.entries())
         h.assert_equal(len(entries), 5)
 
         entry = entries[0]
@@ -148,7 +148,7 @@ class TestCSVImportDatasets(DatabaseTestCase):
 
         # check correct number of entries
         dataset = db.session.query(Dataset).first()
-        entries = list(dataset.materialize())
+        entries = list(dataset.entries())
         h.assert_equal(len(entries), lines)
 
     def _test_mapping(self, name):
@@ -159,6 +159,10 @@ class TestCSVImportDatasets(DatabaseTestCase):
 
         importer = MappingImporter()
         observed_mapping = importer.import_from_string(mapping_csv)
+
+        from pprint import pprint
+        pprint(observed_mapping)
+        pprint(expected_mapping)
 
         h.assert_equal(observed_mapping, expected_mapping)
 
@@ -267,6 +271,6 @@ class TestMappingImporter(DatabaseTestCase):
             h.assert_equal(errors[0]['message'],
                              (u'Value in column "ObjectType" is "entit". '
                               u'Allowed values: "classifier", "entity", '
-                              u'"value"'))
+                              u'"value", "measure", "date"'))
             return
         raise AssertionError('Missing Exception')
