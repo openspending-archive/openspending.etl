@@ -5,7 +5,8 @@ from unidecode import unidecode
 from openspending.lib import solr_util as solr
 from openspending.model import Dataset, meta as db
 
-from openspending.etl.validation.types import attribute_type_by_name
+from openspending.etl.validation.types import convert_types, \
+        attribute_type_by_name
 from openspending.etl import validation
 
 log = logging.getLogger(__name__)
@@ -141,15 +142,13 @@ class BaseImporter(object):
         try:
             _line = self.validator.deserialize(line)
             if not self.dry_run:
-                self.import_line(_line)
+                data = convert_types(self.model['mapping'], _line)
+                self.dataset.load(data)
         except (validation.Invalid, ImporterError) as e:
             if self.raise_errors:
                 raise
             else:
                 self.add_error(e)
-
-    def import_line(self, line):
-        self.dataset.load(line)
 
     def _convert_type(self, line, description):
         type_string = description.get('datatype', 'value')

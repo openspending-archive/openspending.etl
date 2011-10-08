@@ -169,3 +169,29 @@ def make_validator(fields):
     schema = SchemaNode(Mapping(unknown='preserve'),
             validator=collector)
     return schema
+
+def _cast(row, meta):
+    type_ = attribute_type_by_name(meta['datatype'])
+    return type_.cast(row, meta)
+
+def convert_types(mapping, row):
+    """ Translate a row of input data (e.g. from a CSV file) into the
+    structure understood by the dataset loader, i.e. where all 
+    dimensions are dicts and all types have been converted. """
+    out = {}
+    for dimension, meta in mapping.items():
+        if 'column' in meta:
+            out[dimension] = _cast(row, meta)
+        else:
+            out[dimension] = {}
+            label_meta = None
+            for field in meta.get('attributes', meta.get('fields', [])):
+                out[dimension][field['name']] = _cast(row, field)
+                if field['name'] == 'label':
+                    label_meta = field
+            # if there is no 'name' attribute, try to use a munged 
+            # version of 'label'
+            if not 'name' in out[dimension] and label_meta is not None:
+                label_meta['datatype'] = 'id'
+                out[dimension]['name'] = _cast(row, label_meta)
+    return out
