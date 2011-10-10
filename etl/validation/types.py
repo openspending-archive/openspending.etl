@@ -77,6 +77,8 @@ class IdentifierAttributeType(StringAttributeType):
     def cast(self, row, meta):
         value = self._column_or_default(row, meta, "")
         if not len(value):
+            if meta.get('constant'):
+                return meta.get('constant')
             raise ValueError()
         return slugify(value)
 
