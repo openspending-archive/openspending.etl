@@ -4,7 +4,6 @@ from datetime import datetime
 from colander import SchemaNode, String, Invalid, Mapping
 
 from openspending.etl.util import slugify
-from openspending.etl.times import for_datestrings, EMPTY_DATE
 
 class AttributeType(object):
     """ A attribute type maintains information about the parsing
@@ -79,7 +78,8 @@ class IdentifierAttributeType(StringAttributeType):
         if not len(value):
             if meta.get('constant'):
                 return meta.get('constant')
-            raise ValueError()
+            raise ValueError("Value for identifier attribute is empty: %r" %
+                    meta)
         return slugify(value)
 
 class FloatAttributeType(AttributeType):
@@ -134,7 +134,7 @@ class DateAttributeType(AttributeType):
         #elif meta['dimension'] != 'time':
         #    # ugly logic rule #3983:
         #    return None
-        raise ValueError()
+        raise ValueError("'%s': invalid date value." % value)
 
 
 ATTRIBUTE_TYPES = {
