@@ -5,6 +5,20 @@ from colander import SchemaNode, String, Invalid, Mapping
 
 from openspending.etl.util import slugify
 
+
+class InvalidData(Invalid):
+    """ Subclass of colander.Invalid to describe a data validation
+    problem, including source column, dimension name and data type.
+    """
+
+    def __init__(self, column, attribute, datatype, value, message):
+        node = SchemaNode(String(), name=attribute)
+        self.column = column
+        self.value = value
+        self.datatype = datatype
+        super(InvalidData, self).__init__(node, message)
+
+
 class AttributeType(object):
     """ A attribute type maintains information about the parsing
     and conversion operations possible on the attribute, providing
@@ -29,14 +43,15 @@ class AttributeType(object):
         were already handled. """
         raise TypeError("No casting method defined!")
 
-    def _column_or_default(self, row, meta, fallback):
+    def _column_name(self, meta):
+        return meta.get('column')
+
+    def _column_or_default(self, row, meta):
         """ Utility function to handle using either the column 
         field or the default value specified. """
-        value = row.get(meta.get('column'))
+        value = row.get(self._column_name(meta))
         if not value and meta.get('default_value', '').strip():
             value = meta.get('default_value').strip()
-        elif not value:
-            value = fallback
         return value
 
     def __eq__(self, other):
@@ -55,7 +70,13 @@ class ConstantAttributeType(AttributeType):
     def test(self, row, meta):
         return True
 
+    def _column_name(self, meta):
+        return '<constant>'
+
     def cast(self, row, meta):
+        if not meta.get('constant'):
+            raise ValueError('Attribute with type "constant" has an empty'
+                    'constant value.')
         return meta.get('constant')
 
 class StringAttributeType(AttributeType):
@@ -66,7 +87,7 @@ class StringAttributeType(AttributeType):
         return True
 
     def cast(self, row, meta):
-        value = self._column_or_default(row, meta, "")
+        value = self._column_or_default(row, meta)
         return unicode(value)
 
 class IdentifierAttributeType(StringAttributeType):
@@ -74,7 +95,7 @@ class IdentifierAttributeType(StringAttributeType):
     converted to a URI-compatible representation. """
 
     def cast(self, row, meta):
-        value = self._column_or_default(row, meta, "")
+        value = self._column_or_default(row, meta)
         if not len(value):
             if meta.get('constant'):
                 return meta.get('constant')
@@ -89,20 +110,21 @@ class FloatAttributeType(AttributeType):
     RE = re.compile(r'^[0-9-\.,]+$')
 
     def test(self, row, meta):
-        value = unicode(self._column_or_default(row, meta, "0.0"))
-        if not self.RE.match(value):
-            return ("Numbers must only contain digits, periods, "
-                    "dashes and commas: '%s'" % value)
         try:
             self.cast(row, meta)
             return True
-        except:
-            return "Could not coerce value into a number: '%s'" \
-                    % value
+        except ValueError, ve:
+            return unicode(ve)
 
     def cast(self, row, meta):
-        value = unicode(self._column_or_default(row, meta, "0.0"))
-        return float(value.replace(",", ""))
+        value = self._column_or_default(row, meta)
+        if value is None:
+            raise ValueError("Column is empty")
+        if not self.RE.match(value):
+            raise ValueError("Numbers must only contain digits, periods, "
+                             "dashes and commas: '%s'" % value)
+        return float(unicode(value).replace(",", ""))
+
 
 class DateAttributeType(AttributeType):
     """ Date parsing. """
@@ -116,7 +138,7 @@ class DateAttributeType(AttributeType):
             self.cast(row, meta)
             return True
         except ValueError:
-            value = unicode(self._column_or_default(row, meta, ""))
+            value = unicode(self._column_or_default(row, meta))
             if meta['dimension'] != 'time':
                 #if not value:
                 #    return True
@@ -125,7 +147,7 @@ class DateAttributeType(AttributeType):
             return '"time" (here "%s") has to be %s.' % (value, self.SUFFIX)
 
     def cast(self, row, meta):
-        value = unicode(self._column_or_default(row, meta, ""))
+        value = unicode(self._column_or_default(row, meta))
         if value:
             for format in ["%Y-%m-%d", "%Y-%m", "%Y"]:
                 try:
@@ -145,55 +167,67 @@ ATTRIBUTE_TYPES = {
     'date': DateAttributeType()
     }
 
-def attribute_type_by_name(name):
-    """ Get an attribute type by its name. """
-    name = name.lower().strip()
-    return ATTRIBUTE_TYPES.get(name, StringAttributeType())
-
-def make_validator(fields):
-    """ Create a data validator, working on a per-row basis. """
-    fields = [(f, attribute_type_by_name(f['datatype'])) \
-              for f in fields]
-
-    def collector(node, value):
-        # the collector will call each cell validator with the whole
-        # row as its input, so validators can use multiple columns as
-        # input.
-        errors = Invalid(node)
-        for field, type_ in fields:
-            result = type_.test(value, field)
-            if result is not True:
-                child = SchemaNode(String(), name=field.get('column'))
-                errors.add(Invalid(child, result))
-        if len(errors.children):
-            raise errors
-
-    schema = SchemaNode(Mapping(unknown='preserve'),
-            validator=collector)
-    return schema
-
-def _cast(row, meta):
-    type_ = attribute_type_by_name(meta['datatype'])
+def _cast(row, meta, attribute_name):
+    """ Test if type conversion is possible, otherwise emit an 
+    error. """
+    datatype = meta['datatype']
+    type_ = ATTRIBUTE_TYPES.get(datatype.lower().strip(),
+            StringAttributeType())
+    test_result = type_.test(row, meta)
+    if test_result is not True:
+        raise InvalidData(attribute_name, type_._column_name(meta),
+                          datatype, type_._column_or_default(row, meta),
+                          test_result)
     return type_.cast(row, meta)
+
 
 def convert_types(mapping, row):
     """ Translate a row of input data (e.g. from a CSV file) into the
     structure understood by the dataset loader, i.e. where all 
-    dimensions are dicts and all types have been converted. """
+    dimensions are dicts and all types have been converted. 
+
+    This will validate the incoming data and emit a colander.Invalid
+    exception if validation was unsuccessful."""
     out = {}
+    errors = Invalid(SchemaNode(Mapping(unknown='preserve')))
+
     for dimension, meta in mapping.items():
+        meta['dimension'] = dimension
+
+        # handle AttributeDimensions, Measures and DateDimensions.
+        # this is clever, but possibly not always true.
         if 'column' in meta:
-            out[dimension] = _cast(row, meta)
+            try:
+                out[dimension] = _cast(row, meta, dimension)
+            except Invalid, i:
+                errors.add(i)
+        # handle CompoundDimensions.
         else:
             out[dimension] = {}
             label_meta = None
-            for field in meta.get('attributes', meta.get('fields', [])):
-                out[dimension][field['name']] = _cast(row, field)
-                if field['name'] == 'label':
-                    label_meta = field.copy()
+
+            for attribute in meta.get('fields', []):
+                attribute_name = attribute['name']
+                try:
+                    out[dimension][attribute_name] = \
+                            _cast(row, attribute, dimension + '.' +
+                                    attribute_name)
+                except Invalid, i:
+                    errors.add(i)
+                if attribute_name == 'label':
+                    label_meta = attribute.copy()
+
             # if there is no 'name' attribute, try to use a munged 
             # version of 'label'
             if not 'name' in out[dimension] and label_meta is not None:
                 label_meta['datatype'] = 'id'
-                out[dimension]['name'] = _cast(row, label_meta)
+                try:
+                    out[dimension]['name'] = _cast(row, label_meta, 
+                            dimension + '.name')
+                except Invalid, i:
+                    errors.add(i)
+
+    if len(errors.children):
+        raise errors
+
     return out

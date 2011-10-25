@@ -5,11 +5,11 @@ from unidecode import unidecode
 from openspending.lib import solr_util as solr
 from openspending.model import Dataset, meta as db
 
-from openspending.etl.validation.types import convert_types, \
-        attribute_type_by_name
+from openspending.etl.validation.types import convert_types
 from openspending.etl import validation
 
 log = logging.getLogger(__name__)
+
 
 class ImporterError(Exception):
     pass
@@ -36,10 +36,14 @@ class DataError(ImporterError):
         self.source_file = source_file
 
         if isinstance(exception, validation.Invalid):
-            msg = ["Validation error:"]
-            for k, v in exception.asdict().iteritems():
-                msg.append("  - '%s' field had error '%s'" % (unidecode(k), unidecode(v)))
-            self.message = "\n".join(msg)
+            msgs = ["Validation error:"]
+            for invalid in exception.children:
+                msg = "  - '%s' (%s) could not be generated from column '%s'" \
+                      "(value: %s): %s"
+                msg = msg % (invalid.node.name, invalid.datatype, 
+                             invalid.column, invalid.value, invalid.msg)
+                msgs.append(msg)
+            self.message = "\n".join(msgs)
         elif isinstance(exception, Exception):
             # The message attribute is deprecated for Python 2.6 BaseExceptions.
             self.message = str(exception)
@@ -66,7 +70,6 @@ class BaseImporter(object):
         self.source_file = source_file
         self.errors = []
         self.on_error = lambda e: log.warn(e)
-        self._generate_fields()
 
     def run(self,
             dry_run=False,
@@ -84,8 +87,6 @@ class BaseImporter(object):
         self.dataset = self.create_dataset(dry_run=dry_run)
         self.dataset.generate()
         #self.describe_dimensions()
-
-        self.validator = validation.types.make_validator(self.fields)
 
         self.line_number = 0
 
@@ -140,9 +141,8 @@ class BaseImporter(object):
             log.info('Imported %s lines' % self.line_number)
 
         try:
-            _line = self.validator.deserialize(line)
+            data = convert_types(self.model['mapping'], line)
             if not self.dry_run:
-                data = convert_types(self.model['mapping'], _line)
                 self.dataset.load(data)
         except (validation.Invalid, ImporterError) as e:
             if self.raise_errors:
@@ -150,29 +150,13 @@ class BaseImporter(object):
             else:
                 self.add_error(e)
 
-    def _convert_type(self, line, description):
-        type_string = description.get('datatype', 'value')
-        type_ = attribute_type_by_name(type_string)
-        return type_.cast(line, description)
-
     def add_error(self, exception):
         err = DataError(exception=exception,
                         line_number=self.line_number,
                         source_file=self.source_file)
-
         self.on_error(err)
         self.errors.append(err)
 
         if self.max_errors and len(self.errors) >= self.max_errors:
             all_errors = "".join(map(lambda x: "\n  " + str(x), self.errors))
             raise TooManyErrorsError("The following errors occurred:" + all_errors)
-
-    def _generate_fields(self):
-        self.fields = []
-        for dimension, mapping in self.model['mapping'].items():
-            mapping['dimension'] = dimension
-            if mapping.get('type') == 'value':
-                self.fields.append(mapping)
-            else:
-                for field in mapping.get('fields', []):
-                    self.fields.append(field)
