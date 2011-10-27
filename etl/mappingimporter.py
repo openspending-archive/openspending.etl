@@ -2,7 +2,7 @@ import StringIO
 import urllib
 import urlparse
 
-from openspending.etl.validation.mapping import DATATYPE_NAMES, DIMENSION_TYPES
+from openspending.validation.mapping import DATATYPE_NAMES, DIMENSION_TYPES
 from openspending.lib.unicode_dict_reader import UnicodeDictReader
 
 COMPLEX_TYPES = ['classifier', 'entity']
