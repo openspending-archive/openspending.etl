@@ -1,4 +1,4 @@
-from openspending.validation.mapping import (
+from openspending.etl.validation.mapping import (
     Dimension, AmountDimension, DateDimension, Field, Fields, Mapping
 )
 

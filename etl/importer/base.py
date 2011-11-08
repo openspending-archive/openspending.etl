@@ -1,14 +1,12 @@
 import logging
 
 from unidecode import unidecode
-from colander import Invalid
 
 from openspending.lib import solr_util as solr
 from openspending.model import Dataset, meta as db
 
 from openspending.etl.validation.types import convert_types
-#from openspending.etl import validation
-from openspending.validation.model import make_validator
+from openspending.etl import validation
 
 log = logging.getLogger(__name__)
 
@@ -37,7 +35,7 @@ class DataError(ImporterError):
         self.line_number = line_number
         self.source_file = source_file
 
-        if isinstance(exception, Invalid):
+        if isinstance(exception, validation.Invalid):
             msgs = ["Validation error:"]
             for invalid in exception.children:
                 msg = "  - '%s' (%s) could not be generated from column '%s'" \
@@ -119,10 +117,10 @@ class BaseImporter(object):
 
         log.info("Validating model")
         try:
-            model_validator = make_validator()
+            model_validator = validation.model.make_validator()
             self.model = model_validator.deserialize(self.model)
             self.model_valid = True
-        except Invalid as e:
+        except validation.Invalid as e:
             raise ModelValidationError(e)
 
     def create_dataset(self, dry_run=True):
@@ -146,7 +144,7 @@ class BaseImporter(object):
             data = convert_types(self.model['mapping'], line)
             if not self.dry_run:
                 self.dataset.load(data)
-        except (Invalid, ImporterError) as e:
+        except (validation.Invalid, ImporterError) as e:
             if self.raise_errors:
                 raise
             else:
