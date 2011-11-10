@@ -5,5 +5,4 @@ transaction_id,transactionid,,Reference,Reference,string,value
 amount,amount,,Amount,Amount,float,value
 paid_to,to,,Payee,Payee,string,entity
 spending_area,spendingarea,,Spending Area,Spending Area,string,value
-currency,currency,GBP,Currency,Currency,string,value
 id,id,,Unique transaction ID,,string,value

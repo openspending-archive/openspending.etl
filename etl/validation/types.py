@@ -34,7 +34,7 @@ class AttributeType(object):
             self.cast(row, meta)
             return True
         except Exception, e:
-            return repr(e)
+            return unicode(e)
 
     def cast(self, row, meta):
         """ Convert the value to the type. This may throw
@@ -49,7 +49,11 @@ class AttributeType(object):
     def _column_or_default(self, row, meta):
         """ Utility function to handle using either the column 
         field or the default value specified. """
-        value = row.get(self._column_name(meta))
+        column_name = self._column_name(meta)
+        if not column_name in row:
+            raise ValueError("Column '%s' does not exist in source data." %
+                    column_name)
+        value = row.get(column_name)
         if not value and meta.get('default_value', '').strip():
             value = meta.get('default_value').strip()
         return value
@@ -67,9 +71,6 @@ class ConstantAttributeType(AttributeType):
     """ Constant values come from the model rather than from 
     the actual source data. """
 
-    def test(self, row, meta):
-        return True
-
     def _column_name(self, meta):
         return '<constant>'
 
@@ -82,9 +83,6 @@ class ConstantAttributeType(AttributeType):
 class StringAttributeType(AttributeType):
     """ Test if the given values can be represented as a 
     string. """
-
-    def test(self, row, meta):
-        return True
 
     def cast(self, row, meta):
         value = self._column_or_default(row, meta)
@@ -109,13 +107,6 @@ class FloatAttributeType(AttributeType):
 
     RE = re.compile(r'^[0-9-\.,]+$')
 
-    def test(self, row, meta):
-        try:
-            self.cast(row, meta)
-            return True
-        except ValueError, ve:
-            return unicode(ve)
-
     def cast(self, row, meta):
         value = self._column_or_default(row, meta)
         if value is None:
@@ -138,7 +129,10 @@ class DateAttributeType(AttributeType):
             self.cast(row, meta)
             return True
         except ValueError:
-            value = unicode(self._column_or_default(row, meta))
+            try:
+                value = unicode(self._column_or_default(row, meta))
+            except ValueError, ve:
+                return unicode(ve)
             if meta['dimension'] != 'time':
                 #if not value:
                 #    return True
@@ -175,9 +169,12 @@ def _cast(row, meta, attribute_name):
             StringAttributeType())
     test_result = type_.test(row, meta)
     if test_result is not True:
+        try:
+            value = type_._column_or_default(row, meta)
+        except ValueError:
+            value = None
         raise InvalidData(attribute_name, type_._column_name(meta),
-                          datatype, type_._column_or_default(row, meta),
-                          test_result)
+                          datatype, value, test_result)
     return type_.cast(row, meta)
 
 

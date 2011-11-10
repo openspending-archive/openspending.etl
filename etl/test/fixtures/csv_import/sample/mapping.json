@@ -11,14 +11,6 @@
     "description": "Payer",
     "label": "Payer"
   },
-  "currency": {
-    "column": "currency",
-    "datatype": "string",
-    "type": "value",
-    "description": "Currency",
-    "default_value": "GBP",
-    "label": "Currency"
-  },
   "spendingarea": {
     "column": "spending_area",
     "datatype": "string",

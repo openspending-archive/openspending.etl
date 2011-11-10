@@ -35,7 +35,6 @@
 "PEAP Area","peap-area",,"PEAP Area","Poverty Eradication Action Plan","string","value",,"Poverty Eradication Action Plan (classification is now deprecated) "
 "DP",,,,,"string","value",,"EXCLUDE: DP and GOU identified if the project is Donor or GOU funded or both, but this has not been updated for FDT data and looking at amounts (Outturn) is therefore much more accurate"
 "GOU",,,,,"string","value",,"EXCLUDE: DP and GOU identified if the project is Donor or GOU funded or both, but this has not been updated for FDT data and looking at amounts (Outturn) is therefore much more accurate "
-,"currency","UGX",,,"currency","value",,
 "amount","amount",,"Amount","Amount committed or disbursed in this year in Ugandan Shillings.","float","value",,"Calculated for FDT data using the following conversion rates (based on Donor Development ratios for each year): 2003/4: 1 USD = 1.847 UGX; 2004/5: 1 USD = 1.804 UGX; 2005/6: 1 USD = 1.779 UGX "
 "amount_dollars","amount-dollars",,"Dollar Amount","Amount committed or disbursed in this year in US Dollars","float","value",,"Amount committed or planned in this year in US Dollars"
 "amount_donor","amount-donor",,"Donor Amount","Amount committed or disbursed in this year in the donor currency (if available)","float","value",,"Amount committed or planned in this year in the donor currency. Not calculated for all data. "
