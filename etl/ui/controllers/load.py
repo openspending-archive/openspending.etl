@@ -34,7 +34,7 @@ class LoadController(BaseController):
         c.pkg = ckan.Package(package)
 
         c.pkg_diagnostics = {}
-        for hint in ('model', 'model:mapping', 'data'):
+        for hint in ('model', 'data'):
             c.pkg_diagnostics[hint] = _resource_or_error_for_package(c.pkg, hint)
 
         return render('load/preflight.html')

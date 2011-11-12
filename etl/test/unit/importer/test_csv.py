@@ -7,7 +7,6 @@ from openspending.model import meta as db
 from openspending.lib import json
 
 from openspending.etl.importer import CSVImporter
-from openspending.etl.mappingimporter import MappingImporter
 
 from ... import DatabaseTestCase, helpers as h
 
@@ -151,126 +150,7 @@ class TestCSVImportDatasets(DatabaseTestCase):
         entries = list(dataset.entries())
         h.assert_equal(len(entries), lines)
 
-    def _test_mapping(self, name):
-        mapping_csv = csvimport_fixture_file(name, 'mapping.csv').read()
-        mapping_json = csvimport_fixture_file(name, 'mapping.json').read()
-
-        expected_mapping = json.loads(mapping_json)
-
-        importer = MappingImporter()
-        observed_mapping = importer.import_from_string(mapping_csv)
-
-        from pprint import pprint
-        pprint(observed_mapping)
-        pprint(expected_mapping)
-
-        h.assert_equal(observed_mapping, expected_mapping)
-
-    def test_all_mappings(self):
-        for dir in self.datasets_to_test:
-            yield self._test_mapping, dir
-
     def test_all_imports(self):
         for dir in self.datasets_to_test:
             yield self._test_import, dir
 
-
-class TestMappingImporter(DatabaseTestCase):
-
-    def test_empty_mapping(self):
-        mapping_csv = csvimport_fixture_file('simple', 'mapping.csv').read()
-        importer = MappingImporter()
-        mapping = importer.import_from_string(mapping_csv)
-        h.assert_equal(sorted(mapping.keys()),
-                         [u'amount', u'currency', u'from', u'time', u'to'])
-        h.assert_equal(mapping['amount'],
-                         {'column': u'amount',
-                          'datatype': u'float',
-                          'default_value': u'x',
-                          'description': u'z',
-                          'label': u'y',
-                          'type': u'value'})
-        h.assert_equal(mapping['currency'],
-                         {'column': u'currency',
-                          'datatype': u'string',
-                          'default_value': u'GBP',
-                          'description': u'z',
-                          'label': u'y',
-                          'type': u'value'})
-        h.assert_equal(mapping['from'],
-                         {'description': u'z',
-                          'fields': [{'column': u'paid_by',
-                                      'datatype': u'string',
-                                      'default_value': u'x',
-                                      'name': 'label'}],
-                          'label': u'y',
-                          'type': u'entity'})
-        h.assert_equal(mapping['to'],
-                         {'description': u'z',
-                          'fields': [{'column': u'paid_to',
-                                      'datatype': u'string',
-                                      'default_value': u'x',
-                                      'name': 'label'}],
-                          'label': u'y',
-                          'type': u'entity'})
-        h.assert_equal(mapping['time'],
-                         {'column': u'date',
-                          'datatype': u'date',
-                          'default_value': u'x',
-                          'description': u'z',
-                          'label': u'y',
-                          'type': u'value'})
-
-    def test_missing_columns(self):
-        data = ("Uninteresting,Columns\n"
-                "Uninteresting,Values")
-        importer = MappingImporter()
-        try:
-            importer.import_from_string(data)
-        except AssertionError, E:
-            h.assert_true(
-                'The Metadata document must have the columns "Original Field",'
-                in str(E))
-            h.assert_true('The column(s)' in str(E))
-            h.assert_true('are missing.' in str(E))
-            return
-        raise AssertionError('Missing Exception')
-
-    def test_nested_classifier_columns(self):
-        mapping_csv = csvimport_fixture_file('nested', 'mapping.csv').read()
-        importer = MappingImporter()
-        mapping = importer.import_from_string(mapping_csv)
-        to_fields = mapping['to']['fields']
-        h.assert_equal(len(to_fields), 2)
-        h.assert_equal(to_fields[0]['column'], u'paid_to')
-        h.assert_equal(to_fields[0]['name'], 'label')
-        h.assert_equal(to_fields[1]['column'], u'paid_to_identifier')
-        h.assert_equal(to_fields[1]['name'], 'identifier')
-
-    def test_line_in_error(self):
-        importer = MappingImporter()
-        mapping_csv = csvimport_fixture_file('wrong_object_type', 'mapping.csv').read()
-        try:
-            importer.import_from_string(mapping_csv)
-        except ValueError, E:
-            errors = E.args[0]
-            h.assert_equal(len(errors), 1)
-            h.assert_equal(errors[0]['line'], 2)
-            return
-        raise AssertionError('Missing Exception')
-
-    def test_wrong_objecttype(self):
-        importer = MappingImporter()
-        mapping_csv = csvimport_fixture_file('wrong_object_type', 'mapping.csv').read()
-        try:
-            importer.import_from_string(mapping_csv)
-        except ValueError, E:
-            errors = E.args[0]
-            h.assert_equal(len(errors), 1)
-            h.assert_equal(errors[0]['line'], 2)
-            h.assert_equal(errors[0]['message'],
-                             (u'Value in column "ObjectType" is "entit". '
-                              u'Allowed values: "classifier", "entity", '
-                              u'"value", "measure", "date"'))
-            return
-        raise AssertionError('Missing Exception')

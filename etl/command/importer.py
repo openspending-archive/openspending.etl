@@ -22,10 +22,6 @@ import_parser.add_argument('-n', '--dry-run',
 import_parser.add_argument('--no-index', action="store_false", dest='build_indices',
                            default=True, help='Suppress Solr index build.')
 
-import_parser.add_argument('--mapping', action="store", dest='mapping',
-                           default=None, metavar='URL',
-                           help="URL of JSON format mapping.")
-
 import_parser.add_argument('--max-errors', action="store", dest='max_errors',
                            type=int, default=None, metavar='N',
                            help="Maximum number of import errors to tolerate before giving up.")
@@ -43,22 +39,12 @@ def csvimport(csv_data_url, args):
     def json_of_url(url):
         return json.load(urllib2.urlopen(url))
 
-    have_model = args.model or (args.mapping and args.metadata)
-
-    if not have_model:
-        print("You must provide --model OR (--mapping AND --metadata)!",
-              file=sys.stderr)
-        return 1
-
     if args.model:
         model = json_of_url(args.model)
     else:
-        model = {}
-
-        from openspending.ui.lib.mappingimporter import MappingImporter
-        mi = MappingImporter()
-        model["mapping"] = mi.import_from_url(args.mapping)
-        model["dataset"] = json_of_url(args.metadata)
+        print("You must provide --model!",
+              file=sys.stderr)
+        return 1
 
     csv = util.urlopen_lines(csv_data_url)
     importer = CSVImporter(csv, model, csv_data_url)
@@ -142,9 +128,6 @@ def configure_parser(subparser):
     p.add_argument('--model', action="store", dest='model',
                    default=None, metavar='url',
                    help="URL of JSON format model (metadata and mapping).")
-    p.add_argument('--metadata', action="store", dest='metadata',
-                   default=None, metavar='URL',
-                   help="URL of JSON format metadata.")
     p.add_argument('dataset_url', help="Dataset file URL")
     p.set_defaults(func=_csvimport)
 
