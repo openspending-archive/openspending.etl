@@ -2,7 +2,7 @@ import re
 
 from .base import (PreservingMappingSchema, Function, SchemaNode,
                    SequenceSchema, String)
-from .currency import CurrencyCode
+from .currency import CURRENCIES
 
 def _dataset_name(name):
     if not re.match(r"^[\w\-\_]+$", name):
@@ -16,6 +16,11 @@ def _unique_keys(keys):
 
     return True
 
+def _valid_currency(code):
+    if code.upper() not in CURRENCIES:
+        return "%s is not a valid currency code." % code
+    return True
+
 class UniqueKeys(SequenceSchema):
     key = SchemaNode(String())
 
@@ -23,5 +28,6 @@ class Dataset(PreservingMappingSchema):
     name = SchemaNode(String(), validator=Function(_dataset_name))
     label = SchemaNode(String())
     description = SchemaNode(String())
-    currency = SchemaNode(CurrencyCode())
+    currency = SchemaNode(String(), validator=Function(_valid_currency))
     unique_keys = UniqueKeys(validator=Function(_unique_keys))
+
