@@ -7,7 +7,7 @@ from openspending.etl.validation.currency import CURRENCIES
 
 def no_double_underscore(name):
     """ Double underscores are used for dataset bunkering in the
-    application, may not occur in dataset names. """
+    application, may not occur in the dataset name. """
     if '__' in name:
         return "Double underscores are not allowed in dataset names."
     return True
@@ -27,7 +27,7 @@ def unique_keys_are_attributes(state):
         return True
     return _check
 
-def dataset_schema(dataset, state):
+def dataset_schema(state):
     schema = mapping('dataset')
     schema.add(key('name', validator=chained(
             nonempty_string,

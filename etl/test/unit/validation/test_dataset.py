@@ -14,7 +14,7 @@ class TestDataset(TestCase):
     def test_basic_validate(self):
         try:
             ds = self.model['dataset']
-            schema = dataset_schema(ds, self.state)
+            schema = dataset_schema(self.state)
             out = schema.deserialize(ds)
             assert out.keys()==ds.keys(), out
         except Invalid, i:
@@ -24,55 +24,55 @@ class TestDataset(TestCase):
     def test_underscore_validate(self):
         ds = self.model['dataset'].copy()
         ds['name'] = 'test__'
-        schema = dataset_schema(ds, self.state)
+        schema = dataset_schema(self.state)
         schema.deserialize(ds)
     
     @h.raises(Invalid)
     def test_reserved_name_validate(self):
         ds = self.model['dataset'].copy()
         ds['name'] = 'entRY'
-        schema = dataset_schema(ds, self.state)
+        schema = dataset_schema(self.state)
         schema.deserialize(ds)
     
     @h.raises(Invalid)
     def test_invalid_currency(self):
         ds = self.model['dataset'].copy()
         ds['currency'] = 'glass pearls'
-        schema = dataset_schema(ds, self.state)
+        schema = dataset_schema(self.state)
         schema.deserialize(ds)
     
     @h.raises(Invalid)
     def test_no_label(self):
         ds = self.model['dataset'].copy()
         del ds['label']
-        schema = dataset_schema(ds, self.state)
+        schema = dataset_schema(self.state)
         schema.deserialize(ds)
 
     @h.raises(Invalid)
     def test_empty_label(self):
         ds = self.model['dataset'].copy()
         ds['label'] = '  '
-        schema = dataset_schema(ds, self.state)
+        schema = dataset_schema(self.state)
         schema.deserialize(ds)
     
     @h.raises(Invalid)
     def test_no_description(self):
         ds = self.model['dataset'].copy()
         del ds['description']
-        schema = dataset_schema(ds, self.state)
+        schema = dataset_schema(self.state)
         schema.deserialize(ds)
     
     @h.raises(Invalid)
     def test_empty_description(self):
         ds = self.model['dataset'].copy()
         ds['description'] = '  '
-        schema = dataset_schema(ds, self.state)
+        schema = dataset_schema(self.state)
         schema.deserialize(ds)
     
     @h.raises(Invalid)
     def test_invalid_unique_key(self):
         ds = self.model['dataset'].copy()
         ds['unique_keys'].append("banana")
-        schema = dataset_schema(ds, self.state)
+        schema = dataset_schema(self.state)
         schema.deserialize(ds)
 

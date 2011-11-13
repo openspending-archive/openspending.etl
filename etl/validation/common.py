@@ -20,6 +20,15 @@ class ValidationState(object):
             for field in meta.get('fields', []):
                 yield prop + '.' + field['name']
 
+    @property
+    def dimensions(self):
+        """ Return all dimensions of the mapping. """
+        for prop, meta in self.model.get('mapping', {}).items():
+            if meta['type'].lower() == 'measure':
+                continue
+            yield prop
+
+
 def _node(schema, name, *children, **kw):
     if 'validator' in kw:
         kw['validator'] = Function(kw['validator'])

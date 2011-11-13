@@ -18,9 +18,36 @@
         {"name": "name"},
         {"name": "label"}
       ]
+    },
+    "supplier": {
+      "type": "compound",
+      "label": "Supplier", 
+      "fields": [
+        {"name": "name"},
+        {"name": "label"}
+      ]
     }
   },
-  "views": {
-
-  }
+  "views": [
+    {
+      "name": "default",
+      "label": "By Function",
+      "dimension": "dataset",
+      "drilldown": "function",
+      "cuts": {
+        "supplier.name": "harry"
+        }
+    },
+    {
+      "name": "default",
+      "label": "By Supplier",
+      "dimension": "function",
+      "drilldown": "supplier"
+    },
+    {
+      "name": "default",
+      "label": "Grand Total",
+      "dimension": "function"
+    }
+  ]
 }
