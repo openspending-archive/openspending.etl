@@ -1,5 +1,4 @@
 from .base import Function, PreservingMappingSchema, SequenceSchema
-from .dataset import Dataset
 from . import mapping
 
 class View(PreservingMappingSchema):
@@ -9,7 +8,7 @@ class Views(SequenceSchema):
     view = View()
 
 class Model(PreservingMappingSchema):
-    dataset = Dataset()
+    #dataset = Dataset()
     mapping = mapping.make_validator()
     views = Views(missing=[])
 

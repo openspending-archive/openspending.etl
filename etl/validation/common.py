@@ -39,11 +39,4 @@ def sequence(name, *children, **kw):
 def key(name, **kw):
     return _node(String(), name, **kw)
 
-def chained(*validators):
-    def _validator(value):
-        for validator in validators:
-            res = validator(value)
-            if res is not True:
-                return res
-        return True
-    return _validator
+
