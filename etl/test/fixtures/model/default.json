@@ -1,0 +1,26 @@
+{
+  "dataset": {
+    "name": "test",
+    "label": "Test Dataset", 
+    "description": "This is a test dataset",
+    "currency": "EUR",
+    "unique_keys": ["function.name"]
+  },
+  "mapping": {
+    "amount": {
+      "type": "measure",
+      "label": "Amount"
+    },
+    "function": {
+      "type": "compound",
+      "label": "Function", 
+      "fields": [
+        {"name": "name"},
+        {"name": "label"}
+      ]
+    }
+  },
+  "views": {
+
+  }
+}
