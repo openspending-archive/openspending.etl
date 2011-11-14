@@ -49,7 +49,7 @@ class TestCSVImporter(DatabaseTestCase):
         entry = list(dataset.entries(limit=1, offset=1)).pop()
         h.assert_true(entry is not None,
                       "Entry with name could not be found")
-        h.assert_equal(entry['amount'], 130000.0)
+        h.assert_equal(entry['amount'], 66097.77)
 
     def test_no_dimensions_for_measures(self):
         data, dmodel = csvimport_fixture('simple')
