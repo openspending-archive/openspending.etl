@@ -58,7 +58,7 @@ class TestCSVImporter(DatabaseTestCase):
         dataset = db.session.query(Dataset).first()
 
         dimensions = [str(d.name) for d in dataset.dimensions]
-        h.assert_equal(sorted(dimensions), ['from', 'id', 'time', 'to'])
+        h.assert_equal(sorted(dimensions), ['entry_id', 'from', 'time', 'to'])
 
     def test_successful_import_with_simple_testdata(self):
         data, dmodel = csvimport_fixture('simple')

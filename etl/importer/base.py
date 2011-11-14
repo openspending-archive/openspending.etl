@@ -121,7 +121,7 @@ class BaseImporter(object):
             self.model = validation.model.validate_model(self.model)
             self.model_valid = True
         except Invalid as e:
-            print e.asdict()
+            import ipdb; ipdb.set_trace()
             raise ModelValidationError(e)
 
     def create_dataset(self, dry_run=True):
@@ -145,7 +145,7 @@ class BaseImporter(object):
             data = convert_types(self.model['mapping'], line)
             if not self.dry_run:
                 self.dataset.load(data)
-        except (validation.Invalid, ImporterError) as e:
+        except (Invalid, ImporterError) as e:
             if self.raise_errors:
                 raise
             else:
