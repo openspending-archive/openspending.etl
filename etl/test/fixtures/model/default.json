@@ -9,22 +9,43 @@
   "mapping": {
     "amount": {
       "type": "measure",
-      "label": "Amount"
+      "label": "Amount",
+      "datatype": "float",
+      "column": "AMOUNT"
+    },
+    "cofinance": {
+      "type": "measure",
+      "label": "Co-Financed Amount",
+      "datatype": "float",
+      "column": "COFIN"
+    },
+    "time": {
+      "type": "date",
+      "label": "Time of transaction",
+      "datatype": "date",
+      "column": "YEAR"
+    },
+    "transaction_id": {
+      "type": "value",
+      "label": "Transaction ID",
+      "datatype": "id",
+      "column": "TX"
     },
     "function": {
       "type": "compound",
       "label": "Function", 
       "fields": [
-        {"name": "name"},
-        {"name": "label"}
+        {"name": "name", "datatype": "id", "column": "FUNCTION_ID"},
+        {"name": "label", "datatype": "string", "column": "FUNCTION"},
+        {"name": "description", "datatype": "string", "column": "FUNCTION_DESC"}
       ]
     },
     "supplier": {
       "type": "compound",
       "label": "Supplier", 
       "fields": [
-        {"name": "name"},
-        {"name": "label"}
+        {"name": "name", "datatype": "id", "column": "SUPPLIER_ID"},
+        {"name": "label", "datatype": "string", "column": "SUPPLIER"}
       ]
     }
   },
