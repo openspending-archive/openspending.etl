@@ -1,11 +1,11 @@
 import logging
 
-from colander import Invalid
 from unidecode import unidecode
 
 from openspending.lib import solr_util as solr
 from openspending.model import Dataset, meta as db
 
+from openspending.etl.validation import Invalid
 from openspending.etl.validation.types import convert_types
 from openspending.etl import validation
 
