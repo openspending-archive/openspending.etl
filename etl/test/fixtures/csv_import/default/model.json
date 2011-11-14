@@ -1,7 +1,7 @@
 {
   "dataset": {
     "name": "test-csv",
-    "unique_keys": ["id"],
+    "unique_keys": ["entry_id"],
     "label": "Label for Test CSV Import",
     "description": "Description for Test CSV Import",
     "currency": "EUR"

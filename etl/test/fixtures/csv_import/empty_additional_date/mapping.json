@@ -3,30 +3,43 @@
     "fields": [
       {
         "column": "paid_by",
+        "datatype": "id",
+        "name": "name"
+      },
+      {
+        "column": "paid_by",
         "datatype": "string",
         "name": "label"
       }
     ],
+    "label": "Spender",
     "type": "entity"
   },
   "to": {
     "fields": [
       {
         "column": "paid_to",
+        "datatype": "id",
+        "name": "name"
+      },
+      {
+        "column": "paid_to",
         "datatype": "string",
-        "constant": "",
         "name": "label"
       }
     ],
+    "label": "Recipient",
     "type": "entity"
   },
   "amount": {
     "column": "amount",
+    "label": "Amount",
     "datatype": "float",
     "type": "value"
   },
   "time": {
     "column": "date",
+    "label": "Time",
     "datatype": "date",
     "type": "value"
   },
@@ -36,8 +49,9 @@
     "type": "value",
     "label": "Additional Date"
   },
-  "id": {
+  "entry_id": {
     "type": "value",
+    "label": "Entry ID",
     "column": "id",
     "datatype": "string"
   }
