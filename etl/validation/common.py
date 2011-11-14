@@ -1,6 +1,4 @@
 from colander import SchemaNode, Function, String, Mapping, Sequence
-from colander import MappingSchema, SequenceSchema
-
 
 class ValidationState(object):
     """ ValidationState is carried through the validation system to
@@ -11,11 +9,15 @@ class ValidationState(object):
         self.model = model
 
     @property
+    def mapping_items(self):
+        return self.model.get('mapping', {}).items()
+
+    @property
     def attributes(self):
         """ Return all attributes (including measures, atteribute 
         dimensions and compound dimension attributes) of the model. 
         """
-        for prop, meta in self.model.get('mapping', {}).items():
+        for prop, meta in self.mapping_items:
             yield prop
             for field in meta.get('fields', []):
                 yield prop + '.' + field['name']
@@ -23,7 +25,7 @@ class ValidationState(object):
     @property
     def dimensions(self):
         """ Return all dimensions of the mapping. """
-        for prop, meta in self.model.get('mapping', {}).items():
+        for prop, meta in self.mapping_items:
             if meta['type'].lower() == 'measure':
                 continue
             yield prop
