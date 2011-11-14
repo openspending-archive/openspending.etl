@@ -43,18 +43,3 @@ class TestTypes(TestCase):
         assert 'foo' in out, out
         assert out['foo']==5.0
 
-    def test_convert_types_compound_no_name(self):
-        mapping = {
-                    "foo": {"fields": [
-                        {"name": "label", "column": "foo_label", 
-                            "datatype": "string"}
-                        ]
-                    }
-                  }
-        row = {"foo_label": "My Label"}
-        out = types.convert_types(mapping, row)
-        assert isinstance(out, dict), out
-        assert 'foo' in out, out
-        assert isinstance(out['foo'], dict), out
-        assert out['foo']['name']=='my-label'
-

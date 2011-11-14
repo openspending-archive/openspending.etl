@@ -201,7 +201,6 @@ def convert_types(mapping, row):
         # handle CompoundDimensions.
         else:
             out[dimension] = {}
-            label_meta = None
 
             for attribute in meta.get('fields', []):
                 attribute_name = attribute['name']
@@ -209,18 +208,6 @@ def convert_types(mapping, row):
                     out[dimension][attribute_name] = \
                             _cast(row, attribute, dimension + '.' +
                                     attribute_name)
-                except Invalid, i:
-                    errors.add(i)
-                if attribute_name == 'label':
-                    label_meta = attribute.copy()
-
-            # if there is no 'name' attribute, try to use a munged 
-            # version of 'label'
-            if not 'name' in out[dimension] and label_meta is not None:
-                label_meta['datatype'] = 'id'
-                try:
-                    out[dimension]['name'] = _cast(row, label_meta, 
-                            dimension + '.name')
                 except Invalid, i:
                     errors.add(i)
 
