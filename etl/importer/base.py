@@ -121,7 +121,6 @@ class BaseImporter(object):
             self.model = validation.model.validate_model(self.model)
             self.model_valid = True
         except Invalid as e:
-            import ipdb; ipdb.set_trace()
             raise ModelValidationError(e)
 
     def create_dataset(self, dry_run=True):
