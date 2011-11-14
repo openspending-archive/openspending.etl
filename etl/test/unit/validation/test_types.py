@@ -1,8 +1,3 @@
-from openspending.etl.validation.mapping import (
-    Dimension, AmountDimension, DateDimension, Field, Fields, Mapping
-)
-
-
 from ... import TestCase, helpers as h
 from openspending.etl.validation import types
 
