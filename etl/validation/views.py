@@ -44,20 +44,16 @@ def dimension_or_dataset(state):
 
 def view_schema(state):
     schema = mapping('view')
-    schema.add(key('label', validator=chained(
-            nonempty_string,
-        )))
     schema.add(key('name', validator=chained(
             nonempty_string,
             database_name
         )))
-    schema.add(key('dimension', validator=chained(
-            nonempty_string,
-            dimension_or_dataset(state)
-        )))
-    schema.add(key('drilldown', validator=chained(
-            dimension_or_not(state)
-        ), missing=None))
+    schema.add(key('label', validator=nonempty_string))
+    schema.add(key('dimension', 
+                   validator=dimension_or_dataset(state)))
+    schema.add(key('drilldown', 
+                   validator=dimension_or_not(state),
+                   missing=None))
     schema.add(mapping('cuts', 
                        validator=key_is_attribute(state),
                        missing={}))
