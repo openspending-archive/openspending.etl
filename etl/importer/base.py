@@ -1,5 +1,6 @@
 import logging
 
+from colander import Invalid
 from unidecode import unidecode
 
 from openspending.lib import solr_util as solr
@@ -35,7 +36,7 @@ class DataError(ImporterError):
         self.line_number = line_number
         self.source_file = source_file
 
-        if isinstance(exception, validation.Invalid):
+        if isinstance(exception, Invalid):
             msgs = ["Validation error:"]
             for invalid in exception.children:
                 msg = "  - '%s' (%s) could not be generated from column '%s'" \
@@ -117,10 +118,10 @@ class BaseImporter(object):
 
         log.info("Validating model")
         try:
-            model_validator = validation.model.make_validator()
-            self.model = model_validator.deserialize(self.model)
+            self.model = validation.model.validate_model(self.model)
             self.model_valid = True
-        except validation.Invalid as e:
+        except Invalid as e:
+            print e.asdict()
             raise ModelValidationError(e)
 
     def create_dataset(self, dry_run=True):
