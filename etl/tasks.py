@@ -30,27 +30,11 @@ def csv_import(resource_url, model_url, **kwargs):
 
 def remove_dataset(dataset_name):
     log.warn("Dropping dataset '%s'", dataset_name)
-
-    from openspending import mongo
-    db = mongo.db
-
-    log.info("Removing entries")
-    db.entry.remove({'dataset.name': dataset_name})
-
-    log.info("Removing dimensions")
-    db.dimension.remove({'dataset': dataset_name})
-
-    log.info("Removing distincts")
-    db['distincts__%s' % dataset_name].drop()
-
-    log.info("Removing cubes")
-    cubes = filter(lambda x: x.startswith('cubes.%s.' % dataset_name),
-                   db.collection_names())
-    for c in cubes:
-        db[c].drop()
-
-    log.info("Removing dataset object for dataset %s", dataset_name)
-    db.dataset.remove({'name': dataset_name})
+    from openspending.model import Dataset, meta as db
+    dataset = Dataset.by_name(dataset_name)
+    dataset.drop()
+    db.session.delete(dataset)
+    db.session.commit()
 
 def drop_datasets():
     from openspending.model import Dataset, meta as db

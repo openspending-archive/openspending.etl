@@ -53,7 +53,7 @@
       </py:when>
       <py:otherwise>
         We can't import this package. It should have precisely one <tt>model</tt>
-        URL or <tt>model:mapping</tt> URL, and precisely one <tt>data</tt> URL.
+        URL, and precisely one <tt>data</tt> URL.
         See below for information that should help you diagnose what's gone wrong.
       </py:otherwise>
     </p>
@@ -61,8 +61,6 @@
     <dl>
       <dt><tt>model</tt> URL</dt>
       ${resource_for_package('model')}
-      <dt><tt>model:mapping</tt> URL</dt>
-      ${resource_for_package('model:mapping')}
       <dt><tt>data</tt> URL</dt>
       ${resource_for_package('data')}
     </dl>

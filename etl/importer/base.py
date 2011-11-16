@@ -39,7 +39,7 @@ class DataError(ImporterError):
             msgs = ["Validation error:"]
             for invalid in exception.children:
                 msg = "  - '%s' (%s) could not be generated from column '%s'" \
-                      "(value: %s): %s"
+                      " (value: %s): %s"
                 msg = msg % (invalid.node.name, invalid.datatype, 
                              invalid.column, invalid.value, invalid.msg)
                 msgs.append(msg)

@@ -69,25 +69,5 @@
                 "openspending_hint": "model"
             }
         ]
-    },
-    "withmapping": {
-        "id": "345",
-        "name": "withmapping",
-        "ckan_url": "http://ckan.net/package/withmapping",
-        "title": "The Withmapping dataset",
-        "groups": ["openspending"],
-        "notes": "",
-        "resources": [
-            {
-                "id": "123-mapping",
-                "url": "http://example.com/model.js",
-                "openspending_hint": "model:mapping"
-            },
-            {
-                "id": "456-data",
-                "url": "http://example.com/data.csv",
-                "openspending_hint": "data"
-            }
-        ]
     }
 }

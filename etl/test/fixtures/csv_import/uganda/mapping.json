@@ -33,14 +33,6 @@
     "taxonomy": "uganda.swg.sector_objective",
     "label": "Sector Objective"
   },
-  "currency": {
-    "column": "",
-    "datatype": "currency",
-    "type": "value",
-    "description": "",
-    "default_value": "UGX",
-    "label": ""
-  },
   "agency-details": {
     "column": "Agency Details (where relevant)",
     "datatype": "string",

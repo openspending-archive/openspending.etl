@@ -19,11 +19,6 @@
     ],
     "type": "entity"
   },
-  "currency": {
-    "column": "currency",
-    "datatype": "string",
-    "type": "value"
-  },
   "amount": {
     "column": "amount",
     "datatype": "float",

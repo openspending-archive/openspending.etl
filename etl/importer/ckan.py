@@ -3,7 +3,6 @@ from ckanclient import CkanClient, CkanApiError
 from openspending.lib import json
 
 from openspending.etl import util
-from openspending.etl.mappingimporter import MappingImporter
 from openspending.etl.importer.csv import CSVImporter, ImporterError
 
 openspending_group = 'openspending'
@@ -101,12 +100,11 @@ class Package(object):
     def is_importable(self):
         try:
             model = self.openspending_resource('model')
-            mapping = self.openspending_resource('model:mapping')
             data = self.openspending_resource('data')
         except AmbiguousResourceError:
             return False
         else:
-            importable = (data and (model and not mapping) or (mapping and not model))
+            importable = (data and model) 
             return bool(importable)
 
     def metadata_for_resource(self, resource):
@@ -147,7 +145,7 @@ class Package(object):
 
 class CKANImporter(CSVImporter):
     def __init__(self, package,
-                 model_url=None, mapping_url=None, resource_uuid=None):
+                 model_url=None, resource_uuid=None):
 
         if not isinstance(package, Package):
             package = Package(package)
@@ -157,34 +155,20 @@ class CKANImporter(CSVImporter):
         else:
             data = package.openspending_resource('data')
 
-        explicit = (model_url and not mapping_url) or (mapping_url and not model_url)
-
-        if not explicit:
+        if not model_url:
             # Use magic CKAN tags
             model = package.openspending_resource('model')
-            mapping = package.openspending_resource('model:mapping')
-
-            if model:
-                model_url = model['url']
-            elif mapping:
-                mapping_url = mapping['url']
+            model_url = model['url']
 
 
-        # Model given
-        if model_url and data:
-            model_fp = util.urlopen(model_url)
-            try:
-                model = json.load(model_fp)
-            except Exception as e:
-                raise ImporterError("Error encountered while parsing JSON model. "
-                                    "http://jsonlint.com might help! Error was: %s"
-                                    % e)
+        model_fp = util.urlopen(model_url)
+        try:
+            model = json.load(model_fp)
+        except Exception as e:
+            raise ImporterError("Error encountered while parsing JSON model. "
+                                "http://jsonlint.com might help! Error was: %s"
+                                % e)
 
-        # Mapping given, need to extract metadata from CKAN
-        elif mapping_url and data:
-            model = {}
-            model['mapping'] = MappingImporter().import_from_url(mapping_url)
-            model['dataset'] = package.metadata_for_resource(data)
 
         csv = util.urlopen_lines(data["url"])
         super(CKANImporter, self).__init__(csv, model, data["url"])

@@ -73,7 +73,6 @@ class TestCkan(TestCase):
         h.assert_equal(p('bar').is_importable(), True)
         h.assert_equal(p('baz').is_importable(), False)
         h.assert_equal(p('missingdata').is_importable(), False)
-        h.assert_equal(p('withmapping').is_importable(), True)
 
     def test_package_to_json(self):
         p = ckan.Package('foo', from_dict={'name': 'foo', 'bar': 123})

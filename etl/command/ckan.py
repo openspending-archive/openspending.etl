@@ -27,7 +27,6 @@ def check(package_name):
         "is_importable": p.is_importable(),
         "data": _get_url_or_error('data'),
         "model": _get_url_or_error('model'),
-        "model:mapping": _get_url_or_error('model:mapping')
     }
 
     print(json.dumps(res, indent=2, sort_keys=True))
