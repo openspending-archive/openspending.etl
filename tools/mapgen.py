@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 # Mapping generator for OpenSpending
 import pkg_resources
 pkg_resources.require("unidecode")
