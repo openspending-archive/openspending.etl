@@ -10,15 +10,15 @@
     <!--! Choose a dataset to remove -->
     <div py:when="True" py:strip="">
       <h2>Select a dataset to remove:</h2>
-      <p py:if="c.datasets.count() == 0">
+      <p py:if="len(c.datasets) == 0">
         No datasets are currently loaded into the database. Nothing more to do here&hellip;
         <a href="${h.url(controller='home', action='index')}">Go home?</a>
       </p>
       <ul>
         <li py:for="d in c.datasets">
           <a class="confirm"
-             title="Are you sure you want to IRREVERSIBLY REMOVE the '${d['name']}' dataset?"
-             href="${h.url(controller='task', action='remove_dataset', dataset=d['name'])}">
+             title="Are you sure you want to IRREVERSIBLY REMOVE the '${d.name}' dataset?"
+             href="${h.url(controller='task', action='remove_dataset', dataset=d.name)}">
             ${d['label']}
           </a>
         </li>

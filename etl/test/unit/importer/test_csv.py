@@ -2,7 +2,8 @@ from os.path import dirname, join
 from StringIO import StringIO
 from urlparse import urlunparse
 
-from openspending import model
+from openspending.model import Dataset
+from openspending.model import meta as db
 from openspending.lib import json
 
 from openspending.etl.importer import CSVImporter
@@ -39,12 +40,14 @@ class TestCSVImporter(DatabaseTestCase):
         data, dmodel = csvimport_fixture('successful_import')
         importer = CSVImporter(data, dmodel)
         importer.run()
-        dataset = model.dataset.find_one()
+        dataset = db.session.query(Dataset).first()
         h.assert_true(dataset is not None, "Dataset should not be None")
-        h.assert_equal(dataset['name'], "test-csv")
-        entries = model.entry.find({"dataset.name": dataset['name']})
-        h.assert_equal(entries.count(), 4)
-        entry = model.entry.find_one({"provenance.line": 2})
+        h.assert_equal(dataset.name, "test-csv")
+        entries = dataset.entries()
+        h.assert_equal(len(list(entries)), 4)
+
+        # TODO: provenance
+        entry = list(dataset.entries(limit=1, offset=1)).pop()
         h.assert_true(entry is not None,
                       "Entry with name could not be found")
         h.assert_equal(entry['amount'], 130000.0)
@@ -53,13 +56,10 @@ class TestCSVImporter(DatabaseTestCase):
         data, dmodel = csvimport_fixture('simple')
         importer = CSVImporter(data, dmodel)
         importer.run()
-        dataset = model.dataset.find_one()
+        dataset = db.session.query(Dataset).first()
 
-        dimensions = [c['key']
-                      for c
-                      in model.dimension.find()]
-
-        h.assert_equal(sorted(dimensions), ['from', 'to'])
+        dimensions = [str(d.name) for d in dataset.dimensions]
+        h.assert_equal(sorted(dimensions), ['currency', 'from', 'id', 'time', 'to'])
 
     def test_successful_import_with_simple_testdata(self):
         data, dmodel = csvimport_fixture('simple')
@@ -67,16 +67,16 @@ class TestCSVImporter(DatabaseTestCase):
         importer.run()
         h.assert_equal(importer.errors, [])
 
-        dataset = model.dataset.find_one()
+        dataset = db.session.query(Dataset).first()
         h.assert_true(dataset is not None, "Dataset should not be None")
 
-        entries = model.entry.find({"dataset.name": dataset['name']})
-        h.assert_equal(entries.count(), 5)
+        entries = list(dataset.entries())
+        h.assert_equal(len(entries), 5)
 
         entry = entries[0]
         h.assert_equal(entry['from']['label'], 'Test From')
         h.assert_equal(entry['to']['label'], 'Test To')
-        h.assert_equal(entry['time']['unparsed'], '2010-01-01')
+        h.assert_equal(entry['time']['name'], '2010-01-01')
         h.assert_equal(entry['amount'], 100.00)
 
     def test_import_errors(self):
@@ -147,8 +147,9 @@ class TestCSVImportDatasets(DatabaseTestCase):
         h.assert_equal(len(importer.errors), 0)
 
         # check correct number of entries
-        entries = model.entry.find({"dataset.name": dmodel['dataset']['name']})
-        h.assert_equal(entries.count(), lines)
+        dataset = db.session.query(Dataset).first()
+        entries = list(dataset.entries())
+        h.assert_equal(len(entries), lines)
 
     def _test_mapping(self, name):
         mapping_csv = csvimport_fixture_file(name, 'mapping.csv').read()
@@ -158,6 +159,10 @@ class TestCSVImportDatasets(DatabaseTestCase):
 
         importer = MappingImporter()
         observed_mapping = importer.import_from_string(mapping_csv)
+
+        from pprint import pprint
+        pprint(observed_mapping)
+        pprint(expected_mapping)
 
         h.assert_equal(observed_mapping, expected_mapping)
 
@@ -266,6 +271,6 @@ class TestMappingImporter(DatabaseTestCase):
             h.assert_equal(errors[0]['message'],
                              (u'Value in column "ObjectType" is "entit". '
                               u'Allowed values: "classifier", "entity", '
-                              u'"value"'))
+                              u'"value", "measure", "date"'))
             return
         raise AssertionError('Missing Exception')

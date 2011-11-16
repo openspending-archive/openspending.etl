@@ -1,6 +1,6 @@
 from pylons import config, url, request, tmpl_context as c
 
-from openspending import model
+from openspending.model import Dataset, meta as db
 from openspending.ui.lib import authz
 
 from openspending.etl.command import daemon
@@ -19,7 +19,7 @@ class TaskController(BaseController):
         daemon.dispatch_job(
             job_id=c.job_id,
             config=config['__file__'],
-            task='drop_collections'
+            task='drop_datasets'
         )
         return redirect(url(controller='job', action='status', job_id=c.job_id))
 
@@ -27,7 +27,7 @@ class TaskController(BaseController):
     @authz.requires('admin')
     def remove_dataset(self, dataset=None):
         if dataset is None:
-            c.datasets = model.dataset.find()
+            c.datasets = db.session.query(Dataset).all()
             return render('task/remove_dataset.html')
 
         c.job_id = 'remove_%s' % dataset

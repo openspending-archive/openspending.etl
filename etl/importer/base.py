@@ -3,13 +3,13 @@ import logging
 from unidecode import unidecode
 
 from openspending.lib import solr_util as solr
-from openspending import model
+from openspending.model import Dataset, meta as db
 
-from openspending.etl import times
+from openspending.etl.validation.types import convert_types
 from openspending.etl import validation
-from openspending.etl.loader import Loader
 
 log = logging.getLogger(__name__)
+
 
 class ImporterError(Exception):
     pass
@@ -36,10 +36,14 @@ class DataError(ImporterError):
         self.source_file = source_file
 
         if isinstance(exception, validation.Invalid):
-            msg = ["Validation error:"]
-            for k, v in exception.asdict().iteritems():
-                msg.append("  - '%s' field had error '%s'" % (unidecode(k), unidecode(v)))
-            self.message = "\n".join(msg)
+            msgs = ["Validation error:"]
+            for invalid in exception.children:
+                msg = "  - '%s' (%s) could not be generated from column '%s'" \
+                      "(value: %s): %s"
+                msg = msg % (invalid.node.name, invalid.datatype, 
+                             invalid.column, invalid.value, invalid.msg)
+                msgs.append(msg)
+            self.message = "\n".join(msgs)
         elif isinstance(exception, Exception):
             # The message attribute is deprecated for Python 2.6 BaseExceptions.
             self.message = str(exception)
@@ -66,7 +70,6 @@ class BaseImporter(object):
         self.source_file = source_file
         self.errors = []
         self.on_error = lambda e: log.warn(e)
-        self._generate_fields()
 
     def run(self,
             dry_run=False,
@@ -78,13 +81,12 @@ class BaseImporter(object):
 
         self.dry_run = dry_run
         self.max_errors = max_errors
-        self.do_build_indices = build_indices
         self.raise_errors = raise_errors
 
         self.validate_model()
-        self.describe_dimensions()
-
-        self.validator = validation.entry.make_validator(self.fields)
+        self.dataset = self.create_dataset(dry_run=dry_run)
+        self.dataset.generate()
+        #self.describe_dimensions()
 
         self.line_number = 0
 
@@ -98,9 +100,6 @@ class BaseImporter(object):
         if self.line_number == 0:
             self.add_error("Didn't read any lines of data")
 
-        self.generate_views()
-        self.build_indices()
-
         if self.errors:
             log.error("Finished import with %d errors:", len(self.errors))
             for err in self.errors:
@@ -111,14 +110,6 @@ class BaseImporter(object):
     @property
     def lines(self):
         raise NotImplementedError("lines not implemented in BaseImporter")
-
-    @property
-    def mapping(self):
-        return self.model['mapping']
-
-    @property
-    def views(self):
-        return self.model.get('views', [])
 
     def validate_model(self):
         if self.model_valid:
@@ -132,123 +123,40 @@ class BaseImporter(object):
         except validation.Invalid as e:
             raise ModelValidationError(e)
 
-    def describe_dimensions(self):
-        if self.dry_run:
-            return False
-
-        log.info("Describing dimensions")
-        for dimension, mapping in self.mapping.iteritems():
-            # Don't describe "measures"
-            if mapping.get('type') not in model.dimension.DIMENSION_TYPES:
-                continue
-
-            self.loader.create_dimension(
-                dimension,
-                mapping.get("label"),
-                type=mapping.get('type'),
-                datatype=mapping.get('datatype'),
-                fields=mapping.get('fields', []),
-                facet=mapping.get('facet'),
-                description=mapping.get("description")
-            )
-
-    def generate_views(self):
-        if self.dry_run:
-            return False
-
-        log.info("Generating aggregates and views")
-        self.loader.flush_aggregates()
-        for view in self.views:
-            entity_cls = getattr(model, view.get('entity'))
-            self.loader.create_view(
-                entity_cls,
-                view.get('filters', {}),
-                name=view.get('name'),
-                label=view.get('label'),
-                dimension=view.get('dimension'),
-                breakdown=view.get('breakdown'),
-                view_filters=view.get('view_filters', {})
-            )
-        self.loader.compute_aggregates()
-
-    def build_indices(self):
-        if self.dry_run or not self.do_build_indices:
-            return False
-
-        log.info("Building search indices")
-        solr.drop_index(self.model['dataset']['name'])
-        solr.build_index(self.model['dataset']['name'])
-
-    @property
-    def loader(self):
-        if not hasattr(self, '_loader'):
-            dataset = self.model.get('dataset').copy()
-
-            self._loader = Loader(
-                dataset_name=dataset.get('name'),
-                unique_keys=dataset.get('unique_keys', ['_csv_import_fp']),
-                label=dataset.get('label'),
-                description=dataset.pop('description'),
-                currency=dataset.pop('currency'),
-                time_axis=times.GRANULARITY.get(dataset.get(
-                    'temporal_granularity',
-                    'year'
-                )),
-                metadata=dataset
-            )
-        return self._loader
+    def create_dataset(self, dry_run=True):
+        q = db.session.query(Dataset)
+        q = q.filter_by(name=self.model['dataset']['name'])
+        dataset = q.first()
+        if dataset is not None:
+            return dataset
+        dataset = Dataset(self.model)
+        # TODO: only persist for non-dry-run?
+        if not dry_run:
+            db.session.add(dataset)
+            db.session.commit()
+        return dataset
 
     def process_line(self, line):
         if self.line_number % 1000 == 0:
             log.info('Imported %s lines' % self.line_number)
 
         try:
-            _line = self.validator.deserialize(line)
+            data = convert_types(self.model['mapping'], line)
             if not self.dry_run:
-                self.import_line(_line)
+                self.dataset.load(data)
         except (validation.Invalid, ImporterError) as e:
             if self.raise_errors:
                 raise
             else:
                 self.add_error(e)
 
-    def import_line(self, line):
-        raise NotImplementedError("import_line not implemented in BaseImporter")
-
     def add_error(self, exception):
         err = DataError(exception=exception,
                         line_number=self.line_number,
                         source_file=self.source_file)
-
         self.on_error(err)
         self.errors.append(err)
 
         if self.max_errors and len(self.errors) >= self.max_errors:
             all_errors = "".join(map(lambda x: "\n  " + str(x), self.errors))
             raise TooManyErrorsError("The following errors occurred:" + all_errors)
-
-    def _generate_fields(self):
-        def _field(dimension, mapping, column_name, is_end=False):
-            return {
-                'dimension': dimension,
-                'field': mapping.get(column_name),
-                'datatype': mapping.get('datatype'),
-                'is_end': is_end
-            }
-
-        fields = []
-
-        for dimension, mapping in self.mapping.items():
-            if mapping.get('type') == 'value':
-                fields.append(_field(dimension, mapping, 'column'))
-
-                if mapping.get('end_column'):
-                    fields.append(_field(dimension,
-                                         mapping,
-                                         'end_column',
-                                         True))
-            else:
-                for field in mapping.get('fields', []):
-                    fields.append(_field(dimension, field, 'column'))
-
-        self.fields = fields

@@ -5,7 +5,7 @@ from .base import (Boolean, OneOf, Invalid, Function,
                    String)
 
 DATATYPE_NAMES = ['id', 'string', 'float', 'constant', 'date', 'currency']
-DIMENSION_TYPES = ['classifier', 'entity', 'value']
+DIMENSION_TYPES = ['classifier', 'entity', 'value', 'measure', 'date']
 
 def _dimension_name(name):
     if name in ['_id', 'classifiers', 'classifier_ids']:

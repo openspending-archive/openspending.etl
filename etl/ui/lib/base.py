@@ -11,7 +11,6 @@ from pylons.controllers.util import abort, redirect
 from genshi.filters import HTMLFormFiller
 
 from openspending import model
-from openspending import mongo
 from openspending.etl.ui import i18n
 
 import logging
@@ -55,7 +54,6 @@ class BaseController(WSGIController):
         try:
             return WSGIController.__call__(self, environ, start_response)
         finally:
-            mongo.connection.end_request()
             log.debug("Request to %s took %sms" % (request.path,
                int((time() - begin) * 1000)))
 
@@ -72,7 +70,7 @@ class BaseController(WSGIController):
         c.items_per_page = int(request.params.get('items_per_page', 20))
         c.state = session.get('state', {})
 
-        c.datasets = list(model.dataset.find())
+        c.datasets = model.db.session.query(model.Dataset).all()
         c.dataset = None
 
     def __after__(self):

@@ -52,10 +52,11 @@ def remove_dataset(dataset_name):
     log.info("Removing dataset object for dataset %s", dataset_name)
     db.dataset.remove({'name': dataset_name})
 
-def drop_collections():
-    from openspending.mongo import drop_collections
-    log.info("Dropping all collections in database...")
-    drop_collections()
+def drop_datasets():
+    from openspending.model import Dataset, meta as db
+    log.info("Dropping all datasets in database...")
+    for dataset in db.session.query(Dataset):
+        dataset.drop()
     log.info("Done!")
 
 # What follow are helper tasks for testing the etl.command.daemon module.

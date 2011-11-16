@@ -1,7 +1,3 @@
-import colander
-
-from openspending.model.dimension import DIMENSION_TYPES
-
 from .base import Function, PreservingMappingSchema, SequenceSchema
 from .dataset import Dataset
 from . import mapping
@@ -34,7 +30,7 @@ def _validate(model):
     # Ensure that any breakdown or dimension keys in views refer to
     # dimension types.
     def _is_dimension(f):
-        return (model['mapping'][f]['type'] in DIMENSION_TYPES)
+        return (model['mapping'][f]['type'] in ('entity', 'classifier'))
 
     dimensions = set(filter(_is_dimension, fields))
     dimensions.add('dataset')

@@ -1,6 +1,7 @@
 from StringIO import StringIO
 
 from openspending.etl import util
+from openspending.lib.util import hash_values
 
 from .. import TestCase, helpers as h
 
@@ -15,6 +16,6 @@ def test_urlopen_lines(urlopen_mock):
                    ["line one\n", "line two\n", "line three"])
 
 def test_hash():
-    h.assert_equal(util.hash_values(["foo", "bar", "baz"]),
+    h.assert_equal(hash_values(["foo", "bar", "baz"]),
                    '976cbe6da83475797cbb55f3fc50bf174b138a60')
 
