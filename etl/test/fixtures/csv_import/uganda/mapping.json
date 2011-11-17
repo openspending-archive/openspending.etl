@@ -24,6 +24,11 @@
     "fields": [
       {
         "column": "Sector Objective",
+        "datatype": "id",
+        "name": "name"
+      },
+      {
+        "column": "Sector Objective",
         "datatype": "string",
         "name": "label"
       }
@@ -42,6 +47,11 @@
   },
   "spending-source-type-id": {
     "fields": [
+      {
+        "column": "spending_source_type_id",
+        "datatype": "id",
+        "name": "name"
+      },
       {
         "column": "spending_source_type_id",
         "datatype": "string",
@@ -84,6 +94,11 @@
     "fields": [
       {
         "column": "spending_source",
+        "datatype": "id",
+        "name": "name"
+      },
+      {
+        "column": "spending_source",
         "datatype": "string",
         "name": "label"
       }
@@ -94,6 +109,11 @@
   },
   "spending-source-type-label": {
     "fields": [
+      {
+        "column": "spending_source_type_label",
+        "datatype": "id",
+        "name": "name"
+      },
       {
         "column": "spending_source_type_label",
         "datatype": "string",
@@ -122,6 +142,11 @@
     "fields": [
       {
         "column": "SWG",
+        "datatype": "id",
+        "name": "name"
+      },
+      {
+        "column": "SWG",
         "datatype": "string",
         "name": "label"
       }
@@ -140,6 +165,12 @@
   },
   "to": {
     "fields": [
+      {
+        "column": "recipient",
+        "datatype": "id",
+        "default_value": "Society Uganda",
+        "name": "name"
+      },
       {
         "column": "recipient",
         "datatype": "string",
@@ -223,7 +254,7 @@
   },
   "donorcurrency": {
     "column": "donorcurrency",
-    "datatype": "currency",
+    "datatype": "string",
     "type": "value",
     "description": "Currency in which Donor Amount was provided in (if any)",
     "label": "Donor's currency"
@@ -258,6 +289,11 @@
   },
   "from-id": {
     "fields": [
+      {
+        "column": "spending_source_id",
+        "datatype": "id",
+        "name": "name"
+      },
       {
         "column": "spending_source_id",
         "datatype": "string",
@@ -324,7 +360,7 @@
     "description": "Poverty Eradication Action Plan",
     "label": "PEAP Objective"
   },
-  "id": {
+  "entry_id": {
     "column": "id",
     "datatype": "string",
     "type": "value",

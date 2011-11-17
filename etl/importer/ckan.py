@@ -1,15 +1,24 @@
-from ckanclient import CkanClient, CkanApiError
+from ckanclient import CkanClient
 
 from openspending.lib import json
 
 from openspending.etl import util
-from openspending.etl.importer.csv import CSVImporter, ImporterError
+from openspending.etl.importer.csv import CSVImporter
+from openspending.etl.importer.base import ImporterError
 
 openspending_group = 'openspending'
 base_location = 'http://thedatahub.org/api'
 api_key = None
 
 _client = None
+
+class LineImportError(ImporterError):
+    def __init__(self, field, exc):
+        self.field = field
+        self.exc = exc
+
+    def __str__(self):
+        return "Column `%s': %s" % (self.field, repr(self.exc))
 
 def configure(config=None):
     global openspending_group

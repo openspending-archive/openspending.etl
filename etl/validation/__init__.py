@@ -1,2 +1,3 @@
-from .base import Invalid
 from . import model
+
+from colander import Invalid

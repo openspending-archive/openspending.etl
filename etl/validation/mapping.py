@@ -1,96 +1,199 @@
-import re
+from openspending.etl.validation.common import mapping, sequence
+from openspending.etl.validation.common import key
+from openspending.etl.validation.predicates import chained, \
+        reserved_name, database_name, nonempty_string
 
-from .base import (Boolean, OneOf, Invalid, Function,
-                   PreservingMappingSchema, SchemaNode, SequenceSchema,
-                   String)
+DATATYPES = ['id', 'string', 'float', 'constant', 'date']
 
-DATATYPE_NAMES = ['id', 'string', 'float', 'constant', 'date', 'currency']
-DIMENSION_TYPES = ['classifier', 'entity', 'value', 'measure', 'date']
-
-def _dimension_name(name):
-    if name in ['_id', 'classifiers', 'classifier_ids']:
-        return u"Reserved dimension name: %s" % name
-    if not re.match(r"\w+", name):
-        return u"Invalid dimension name: %s" % name
+def valid_datatype(value):
+    """ Check that the datatype is known and supported. """
+    if not value in DATATYPES:
+        return "'%s' is an unrecognized data type" % value
     return True
 
-def _specific_type(t):
-    def _check(n):
-        if not t == n:
-            return u"'%s' is not required type '%s'" % (n, t)
+def specific_datatype(type_):
+    """ Date dimensions and measures require data of a 
+    specific type, ensure they get it. """
+    def _check(value):
+        if not value == type_:
+            return "The data type must be '%s', not '%s'." \
+                    % (type_, value)
         return True
     return _check
-    
 
-class Field(PreservingMappingSchema):
-    name = SchemaNode(String(), validator=Function(_dimension_name))
-    column = SchemaNode(String(), missing=None)
-    end_column = SchemaNode(String(), missing=None)
-    facet = SchemaNode(Boolean(), missing=False)
-    constant = SchemaNode(String(), missing=None)
-    datatype = SchemaNode(String(), validator=OneOf(DATATYPE_NAMES))
+def name_wrap(check, name):
+    """ Apply a validator to the curried name variable, not 
+    any of the actual mapping data. """
+    def _check(value):
+        return check(name)
+    return _check
 
+def no_dimension_id_overlap(name, state):
+    """ There cannot both be a dimension of name ``foo`` and 
+    a dimension named ``foo_id`` because that may be used as 
+    a foreign key name on the facts table. """
+    def _check(value):
+        invalid_name = name + '_id'
+        properties = map(lambda (x,y): x, state.mapping_items)
+        if invalid_name in properties:
+            return "The names %s and %s_id conflict. Please " \
+                    "remove %s_id or rename it." % (name, name, name)
+        return True
+    return _check
 
-class Fields(SequenceSchema):
-    field = Field()
-
-
-# TODO: We really want to ensure that a dimension has one and only one of
-# {column, constant, fields}. Colander may not be up to this, as validators can
-# only know about their nodes, and not their nodes' siblings.
-class Dimension(PreservingMappingSchema):
-    label = SchemaNode(String(), missing=None)
-    description = SchemaNode(String(), missing=None)
-    type = SchemaNode(String(), validator=OneOf(DIMENSION_TYPES))
-    fields = Fields(missing=None)
-
-
-class AmountDimension(PreservingMappingSchema):
-    label = SchemaNode(String(), missing=None)
-    description = SchemaNode(String(), missing=None)
-    column = SchemaNode(String())
-    datatype = SchemaNode(String(),
-                          missing='float',
-                          validator=Function(_specific_type('float')))
-    type = SchemaNode(String(),
-                      missing='value',
-                      validator=Function(_specific_type('value')))
-
-
-class DateDimension(PreservingMappingSchema):
-    label = SchemaNode(String(), missing=None)
-    description = SchemaNode(String(), missing=None)
-    column = SchemaNode(String())
-    datatype = SchemaNode(String(),
-                          missing='date',
-                          validator=Function(_specific_type('date')))
-    type = SchemaNode(String(),
-                      missing='value',
-                      validator=Function(_specific_type('value')))
-
-class Mapping(PreservingMappingSchema):
-    amount = AmountDimension()
-    time = DateDimension()
-    to = Dimension()
-    from_ = Dimension() # `from' is a reserved word
-
-# This cannot be set in the definition, because colander is a bit too clever
-# for its own good and will reset the "name" attribute when the MappingSchema
-# metaclass ctor is called.
-#
-# See colander._SchemaMeta.__init__
-Mapping.from_.name = "from"
-
-def make_validator():
-    return Mapping(validator=Function(_validate))
-
-def _validate(mapping):
-
-    # Ensure that all classifiers possess a taxonomy
-    for key, value in mapping.iteritems():
-        if value['type'] == 'classifier':
-            t = value.get('taxonomy', None)
-            if not t:
-                return '"%s" (a classifier dimension) must have a "taxonomy" field' % key
-
+def require_time_dimension(mapping):
+    """ Each mapping needs to have a time dimension. """
+    if 'time' not in mapping.keys():
+        return "Mapping does not contain a time dimension." \
+                "The dimension must exist and contain a date " \
+                "to describe the entry."
+    # TODO: in the future, this should check 'type':
+    if mapping['time'].get('datatype') != 'date':
+        return "The 'time' dimension must have the datatype " \
+                "'date' as it will be converted to a date " \
+                "dimension."
     return True
+
+def require_amount_dimension(mapping):
+    """ Each mapping needs to have a amount dimension. """
+    if 'amount' not in mapping.keys():
+        return "Mapping does not contain an amount measure." \
+                "At least this measure must exist and contain " \
+                "the key value of this entry."
+    # TODO: in the future, this should check 'type':
+    if mapping['amount'].get('datatype') != 'float':
+        return "The amount must be a numeric the datatype " \
+                "(i.e. 'float') to be a valid measure."
+    return True
+
+def compound_attribute_name_is_id_type(attribute):
+    """ Whenever a compound dimension has a name attribute, this
+    attribute must be munged, i.e. be of type 'id'. """
+    if attribute.get('name') == 'name' and \
+            attribute.get('datatype') != 'id':
+        return "'name' attributes on dimensions must be of the " \
+                "data type 'id' so they can be used in URLs"
+    return True
+
+def compound_attribute_label_is_string_type(attribute):
+    """ Whenever a compound dimension has a label attribute, this
+    attribute will be used in the UI and must be of type 'string'. 
+    """
+    if attribute.get('name') == 'label' and \
+            attribute.get('datatype') != 'string':
+        return "'label' attributes on dimensions must be of the " \
+                "data type 'string' so they can be used in the UI."
+    return True
+
+def compound_attributes_include_name(attributes):
+    """ Each compound dimension must have a 'name' attribute. """
+    attributes = [a.get('name') for a in attributes]
+    if not 'name' in attributes:
+        return "Compound dimensions must have a 'name' attribute " \
+                "that uniquely identifies them in the data. The " \
+                "'name' attribute must be of data type 'id'."
+    return True
+
+def compound_attributes_include_label(attributes):
+    """ Each compound dimension must have a 'label' attribute. """
+    attributes = [a.get('name') for a in attributes]
+    if not 'label' in attributes:
+        return "Compound dimensions must have a 'label' attribute " \
+                "that will be used to describe them in the " \
+                "interface. The label must be a 'string'."
+    return True
+
+def property_schema(name, state):
+    """ This is validation which is common to all properties,
+    i.e. both dimensions and measures. """
+    schema = mapping(name, validator=chained(
+        name_wrap(reserved_name, name),
+        name_wrap(database_name, name),
+        no_dimension_id_overlap(name, state)
+        ))
+    schema.add(key('label', validator=chained(
+            nonempty_string,
+        )))
+    schema.add(key('description', validator=chained(
+            nonempty_string,
+        ), missing=None))
+    return schema
+
+def measure_schema(name, state):
+    schema = property_schema(name, state)
+    schema.add(key('column', validator=chained(
+            nonempty_string,
+        )))
+    schema.add(key('datatype', validator=chained(
+            nonempty_string,
+            specific_datatype('float')
+        )))
+    return schema
+
+def attribute_dimension_schema(name, state):
+    schema = property_schema(name, state)
+    schema.add(key('column', validator=chained(
+            nonempty_string,
+        )))
+    schema.add(key('datatype', validator=chained(
+            nonempty_string,
+            valid_datatype,
+        )))
+    return schema
+
+def date_schema(name, state):
+    schema = property_schema(name, state)
+    schema.add(key('column', validator=chained(
+            nonempty_string,
+        )))
+    schema.add(key('datatype', validator=chained(
+            nonempty_string,
+            specific_datatype('date')
+        )))
+    return schema
+
+def dimension_attribute_schema(state):
+    schema = mapping('field', validator=chained(
+            compound_attribute_name_is_id_type,
+            compound_attribute_label_is_string_type
+        ))
+    schema.add(key('name', validator=chained(
+            nonempty_string,
+            reserved_name,
+            database_name
+        )))
+    schema.add(key('column', validator=chained(
+            nonempty_string,
+        )))
+    schema.add(key('datatype', validator=chained(
+            nonempty_string,
+            valid_datatype
+        )))
+    return schema
+
+def compound_dimension_schema(name, state):
+    schema = property_schema(name, state)
+    schema.add(sequence('fields', dimension_attribute_schema(state),
+        validator=chained(
+            compound_attributes_include_name,
+            compound_attributes_include_label
+        )))
+    return schema
+
+def mapping_schema(state):
+    schema = mapping('mapping', validator=chained(
+        require_time_dimension,
+        require_amount_dimension
+        ))
+    for name, meta in state.mapping_items:
+        type_schema = {
+            'measure': measure_schema,
+            'value': attribute_dimension_schema,
+            'attribute': attribute_dimension_schema,
+            'date': date_schema,
+            }.get(meta.get('type'), 
+                  compound_dimension_schema)
+        schema.add(type_schema(name, state))
+    return schema
+
+

@@ -1,6 +1,7 @@
 from openspending.test.helpers import *
 
 import os as _os
+import json
 
 TEST_ROOT = _os.path.dirname(__file__)
 
@@ -16,6 +17,12 @@ def load_fixture(name):
 def fixture_file(name):
     """Return a file-like object pointing to a named fixture."""
     return open(fixture_path(name))
+
+def model_fixture(name):
+    model_fp = fixture_file('model/' + name + '.json')
+    model = json.load(model_fp)
+    model_fp.close()
+    return model
 
 def fixture_path(name):
     """
