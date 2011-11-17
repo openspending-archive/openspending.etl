@@ -1,7 +1,7 @@
 from pylons import config, url, request, tmpl_context as c
 
 from openspending.model import Dataset, meta as db
-from openspending.ui.lib import authz
+#from openspending.ui.lib import authz
 
 from openspending.etl.command import daemon
 from openspending.etl.importer import ckan
@@ -9,7 +9,7 @@ from openspending.etl.ui.lib.base import BaseController, render, redirect
 
 class TaskController(BaseController):
 
-    @authz.requires('admin')
+    #@authz.requires('admin')
     def drop_database(self):
         c.job_id = 'drop_database'
 
@@ -24,7 +24,7 @@ class TaskController(BaseController):
         return redirect(url(controller='job', action='status', job_id=c.job_id))
 
 
-    @authz.requires('admin')
+    #@authz.requires('admin')
     def remove_dataset(self, dataset=None):
         if dataset is None:
             c.datasets = db.session.query(Dataset).all()

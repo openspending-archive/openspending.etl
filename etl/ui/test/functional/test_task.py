@@ -7,19 +7,19 @@ class TestTaskController(ControllerTestCase):
 
     def setup(self):
         super(TestTaskController, self).setup()
-        self.patcher_authz = h.patch('openspending.ui.lib.authz.have_role')
-        self.mock_authz = self.patcher_authz.start()
+        #self.patcher_authz = h.patch('openspending.ui.lib.authz.have_role')
+        #self.mock_authz = self.patcher_authz.start()
 
         self.patcher_dispatch = h.patch('openspending.etl.command.daemon.dispatch_job')
         self.mock_dispatch = self.patcher_dispatch.start()
 
     def teardown(self):
-        self.patcher_authz.stop()
+        #self.patcher_authz.stop()
         self.patcher_dispatch.stop()
         super(TestTaskController, self).teardown()
 
     def test_drop_database(self):
-        self.mock_authz.return_value = True
+        #self.mock_authz.return_value = True
 
         response = self.app.get(url(controller='task', action='drop_database'))
 
@@ -28,7 +28,7 @@ class TestTaskController(ControllerTestCase):
                                                    task='drop_datasets')
 
     def test_remove_dataset_select(self):
-        self.mock_authz.return_value = True
+        #self.mock_authz.return_value = True
 
         datasets = [u'one', u'two', u'three']
 
@@ -46,7 +46,7 @@ class TestTaskController(ControllerTestCase):
                 "No link to remove dataset '%s' in response!" % name
 
     def test_remove_dataset(self):
-        self.mock_authz.return_value = True
+        #self.mock_authz.return_value = True
         
         dataset = Dataset({'dataset': {'name':'mydataset'}})
         db.session.add(dataset)

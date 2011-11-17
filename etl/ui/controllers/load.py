@@ -7,7 +7,7 @@ from pylons.i18n import _
 
 from openspending.etl.importer import ckan
 from openspending.ui.lib import helpers as h
-from openspending.ui.lib.authz import requires
+#from openspending.ui.lib.authz import requires
 
 from openspending.etl.command import daemon
 from openspending.etl.ui.lib.base import BaseController, render, redirect
@@ -39,7 +39,7 @@ class LoadController(BaseController):
 
         return render('load/preflight.html')
 
-    @requires('admin')
+    #@requires('admin')
     def start(self, package):
         job_id = _job_id_for_package(package)
 
