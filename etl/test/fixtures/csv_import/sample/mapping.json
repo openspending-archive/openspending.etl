@@ -3,6 +3,11 @@
     "fields": [
       {
         "column": "paid_by",
+        "datatype": "id",
+        "name": "name"
+      },
+      {
+        "column": "paid_by",
         "datatype": "string",
         "name": "label"
       }
@@ -20,6 +25,11 @@
   },
   "to": {
     "fields": [
+      {
+        "column": "paid_to",
+        "datatype": "id",
+        "name": "name"
+      },
       {
         "column": "paid_to",
         "datatype": "string",
@@ -51,7 +61,7 @@
     "description": "Reference",
     "label": "Reference"
   },
-  "id": {
+  "entry_id": {
     "column": "id",
     "datatype": "string",
     "type": "value",

@@ -1,8 +1,3 @@
-from openspending.etl.validation.mapping import (
-    Dimension, AmountDimension, DateDimension, Field, Fields, Mapping
-)
-
-
 from ... import TestCase, helpers as h
 from openspending.etl.validation import types
 
@@ -47,19 +42,4 @@ class TestTypes(TestCase):
         assert isinstance(out, dict), out
         assert 'foo' in out, out
         assert out['foo']==5.0
-
-    def test_convert_types_compound_no_name(self):
-        mapping = {
-                    "foo": {"fields": [
-                        {"name": "label", "column": "foo_label", 
-                            "datatype": "string"}
-                        ]
-                    }
-                  }
-        row = {"foo_label": "My Label"}
-        out = types.convert_types(mapping, row)
-        assert isinstance(out, dict), out
-        assert 'foo' in out, out
-        assert isinstance(out['foo'], dict), out
-        assert out['foo']['name']=='my-label'
 

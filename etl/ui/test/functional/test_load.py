@@ -60,10 +60,10 @@ class TestLoadController(ControllerTestCase):
         assert "multiple resources with hint &#39;model&#39;" in response, \
             "No warning about ambiguous resources in response!"
 
-    @h.patch('openspending.ui.lib.authz.have_role')
+    #@h.patch('openspending.ui.lib.authz.have_role')
     @h.patch('openspending.etl.command.daemon.dispatch_job')
-    def test_start(self, dispatch_job_mock, have_role_mock):
-        have_role_mock.return_value = True # Pretend to be admin user.
+    def test_start(self, dispatch_job_mock):
+        #have_role_mock.return_value = True # Pretend to be admin user.
 
         response = self.app.get(url(controller='load',
                                     action='start',
