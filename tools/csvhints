@@ -1,0 +1,68 @@
+#!/usr/bin/python
+
+# This is a quick translation of a more general system implemented in OCaml
+
+# In no sense whatsoever is this intended to be highly performant code; the
+# algorithm is O(n ** 2) in the number of columns and O(n log n) in the number
+# of rows, which can be in the millions.
+
+import csv
+import sys
+
+def surjection(data, a, b):
+    pairs = frozenset([ (i[a], i[b]) for i in data ])
+    
+    tmp = {}
+    for i in pairs:
+        ax, bx = i
+        if ax not in tmp:
+            tmp[ax] = bx
+        elif tmp[ax] != bx:
+            return False
+        else:
+            continue
+    return True
+
+def run():
+    reader = csv.DictReader(sys.stdin)
+
+    all_columns = reader.fieldnames
+    assert len(all_columns) == len(frozenset(all_columns))
+
+    data = []
+    col_data = dict([ (k, []) for k in all_columns ])
+
+    for row in reader:
+        data.append(row)
+        for k,v in row.iteritems():
+            col_data[k].append(v)
+
+    col_sets = dict([ (k, frozenset(v)) for k, v in col_data.iteritems() ])
+
+    lines = len(data)
+
+    unique_id_cols = filter(lambda i: len(col_sets[i]) == lines, all_columns)
+    constant_cols  = filter(lambda i: len(col_sets[i]) == 1, all_columns)
+    columns        = filter(lambda i: len(col_sets[i]) != 1 and len(col_sets[i]) != lines, all_columns)
+
+    for col in unique_id_cols:
+        print "Unique: %s" % col
+    for col in constant_cols:
+        print "Constant: %s" % col
+
+    _cmp = lambda a, b: cmp(len(col_sets[a]), len(col_sets[b]))
+    columns.sort(cmp=_cmp, reverse=True)
+
+    for i in range(0, len(columns)): 
+        for j in range(i + 1, len(columns)): # range does bounds checking
+            higher = columns[i]
+            lower = columns[j]
+
+            if surjection(data, higher, lower):
+                if surjection(data, lower, higher):
+                    print "Bijection: %s %s" % (higher, lower)
+                else:
+                    print "Surjection: %s %s" % (higher, lower)
+
+if __name__ == '__main__':
+    run()
